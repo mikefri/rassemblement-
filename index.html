@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Signalements Logistique</title>
+
+  <!-- Firebase SDK (compat) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:           #F2F0EB;
+      --surface:      #FFFFFF;
+      --surface2:     #F7F6F2;
+      --border:       #DDD9D0;
+      --text:         #1A1916;
+      --text-sec:     #6B6860;
+      --accent:       #C8391E;
+      --accent-light: #FDECEA;
+      --blue:         #1B5EA6;
+      --blue-light:   #EBF2FC;
+      --amber:        #B5620E;
+      --amber-light:  #FEF3E2;
+      --green:        #1A6840;
+      --green-light:  #E8F5EE;
+      --nav:          #18170E;
+      --nav-text:     #F2F0EB;
+      --radius:       8px;
+      --font:         'IBM Plex Sans', sans-serif;
+      --mono:         'IBM Plex Mono', monospace;
+      --cond:         'IBM Plex Sans Condensed', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    /* ── NAV ── */
+    nav {
+      background: var(--nav);
+      color: var(--nav-text);
+      display: flex;
+      align-items: stretch;
+      padding: 0 20px;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .nav-brand {
+      font-family: var(--cond);
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      flex: 1;
+      gap: 8px;
+    }
+    .nav-brand-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+    .nav-tabs { display: flex; align-items: stretch; }
+    .nav-tab {
+      padding: 0 18px;
+      font-family: var(--font);
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(242,240,235,0.5);
+      cursor: pointer;
+      border: none;
+      background: none;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .nav-tab:hover { color: var(--nav-text); }
+    .nav-tab.active { color: var(--nav-text); border-bottom-color: var(--accent); }
+
+    /* ── LAYOUT ── */
+    main { max-width: 700px; margin: 0 auto; padding: 24px 16px 80px; }
+
+    .hidden { display: none !important; }
+
+    /* ── BANNER ── */
+    .banner {
+      background: var(--amber-light);
+      border: 1.5px solid var(--amber);
+      border-radius: var(--radius);
+      padding: 13px 16px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: #7A4108;
+      display: none;
+    }
+    .banner.show { display: block; }
+    .banner strong { display: block; font-weight: 600; margin-bottom: 3px; font-size: 13.5px; }
+
+    /* ── SECTION HEADER ── */
+    .sec-title {
+      font-family: var(--cond);
+      font-weight: 700;
+      font-size: 22px;
+      letter-spacing: 0.01em;
+      margin-bottom: 4px;
+    }
+    .sec-sub { font-size: 13px; color: var(--text-sec); margin-bottom: 20px; }
+
+    /* ── STEPS ── */
+    .steps {
+      display: flex;
+      align-items: center;
+      margin-bottom: 24px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .step { display: flex; align-items: center; gap: 6px; color: var(--text-sec); }
+    .step.active { color: var(--text); }
+    .step-num {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600;
+    }
+    .step.active .step-num { background: var(--accent); color: #fff; }
+    .step.done  .step-num { background: var(--green);  color: #fff; }
+    .step-sep { width: 24px; height: 1px; background: var(--border); margin: 0 8px; }
+
+    /* ── CATEGORY LABEL ── */
+    .cat-label {
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-sec);
+      margin: 20px 0 10px;
+    }
+
+    /* ── TYPE GRID ── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    @media (max-width: 460px) { .type-grid { grid-template-columns: 1fr; } }
+
+    .type-card {
+      padding: 13px 15px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      text-align: left;
+    }
+    .type-card:hover { border-color: var(--accent); background: var(--accent-light); }
+    .type-card.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      box-shadow: 0 0 0 3px rgba(200,57,30,0.12);
+    }
+    .type-code {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-sec);
+      letter-spacing: 0.05em;
+      margin-bottom: 6px;
+    }
+    .type-name { font-weight: 600; font-size: 13.5px; line-height: 1.3; }
+    .type-desc { font-size: 12px; color: var(--text-sec); margin-top: 4px; line-height: 1.4; }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      padding: 22px;
+      margin-bottom: 12px;
+    }
+    .card-title {
+      font-family: var(--cond);
+      font-weight: 700;
+      font-size: 15px;
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .type-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 8px;
+      background: var(--accent-light);
+      color: var(--accent);
+      border-radius: 4px;
+    }
+
+    /* ── FORM FIELDS ── */
+    .field { margin-bottom: 16px; }
+    .field:last-child { margin-bottom: 0; }
+
+    label {
+      display: block;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--text-sec);
+      margin-bottom: 6px;
+    }
+    label .req { color: var(--accent); }
+
+    input[type="text"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-family: var(--font);
+      font-size: 14px;
+      color: var(--text);
+      background: var(--surface);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    input[type="text"]:focus,
+    input[type="number"]:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(200,57,30,0.1);
+    }
+
+    .mono-input { font-family: var(--mono); letter-spacing: 0.04em; }
+
+    textarea { resize: vertical; min-height: 80px; }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B6860' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+      cursor: pointer;
+    }
+
+    .fields-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 460px) { .fields-row { grid-template-columns: 1fr; } }
+
+    .field-hint {
+      font-size: 11.5px; color: var(--text-sec);
+      margin-top: 5px; line-height: 1.4;
+    }
+    .field-warn {
+      font-size: 11.5px;
+      color: #7A4108;
+      background: var(--amber-light);
+      border-left: 3px solid var(--amber);
+      padding: 8px 10px;
+      border-radius: 0 5px 5px 0;
+      margin-top: 7px; line-height: 1.4;
+    }
+
+    /* ── URGENCY ── */
+    .urgency-row { display: flex; gap: 8px; }
+    .urgency-opt {
+      flex: 1; padding: 10px 6px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px; text-align: center;
+      cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: all 0.15s; background: var(--surface);
+      color: var(--text-sec);
+    }
+    .urgency-opt[data-val="normale"].selected { border-color: var(--green); background: var(--green-light); color: var(--green); }
+    .urgency-opt[data-val="haute"].selected   { border-color: var(--amber); background: var(--amber-light); color: var(--amber); }
+    .urgency-opt[data-val="bloquant"].selected { border-color: var(--accent); background: var(--accent-light); color: var(--accent); }
+
+    /* ── BUTTONS ── */
+    .btn {
+      padding: 11px 22px;
+      border-radius: 6px;
+      font-family: var(--font);
+      font-size: 14px; font-weight: 600;
+      cursor: pointer; border: none;
+      transition: all 0.15s;
+      display: inline-flex; align-items: center; gap: 8px;
+    }
+    .btn-primary { background: var(--accent); color: #fff; width: 100%; justify-content: center; }
+    .btn-primary:hover:not(:disabled) { background: #A82D18; }
+    .btn-primary:active:not(:disabled) { transform: scale(0.99); }
+    .btn-ghost {
+      background: transparent; color: var(--text-sec);
+      border: 1.5px solid var(--border);
+      width: auto; padding: 8px 14px; font-size: 13px;
+    }
+    .btn-ghost:hover { border-color: var(--text); color: var(--text); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .form-actions { display: flex; gap: 10px; margin-top: 8px; }
+
+    /* ── SUCCESS ── */
+    .success-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+    }
+    .success-icon {
+      width: 56px; height: 56px;
+      background: var(--green-light);
+      border: 2px solid var(--green);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 18px;
+      font-size: 22px; color: var(--green);
+    }
+    .success-title { font-family: var(--cond); font-weight: 700; font-size: 20px; margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: var(--text-sec); margin-bottom: 18px; }
+    .success-id {
+      font-family: var(--mono);
+      font-size: 12px; color: var(--text-sec);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 4px;
+      display: inline-block; margin-bottom: 20px;
+    }
+
+    /* ── HISTORY ── */
+    .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filter-btn {
+      padding: 6px 13px; border-radius: 20px;
+      font-size: 12px; font-weight: 500;
+      border: 1.5px solid var(--border);
+      background: var(--surface); cursor: pointer;
+      transition: all 0.15s; color: var(--text-sec);
+    }
+    .filter-btn.active { background: var(--nav); color: var(--nav-text); border-color: var(--nav); }
+
+    .report-list { display: flex; flex-direction: column; gap: 8px; }
+    .report-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 13px 16px;
+      display: flex; gap: 12px; align-items: flex-start;
+    }
+    .u-bar { width: 4px; border-radius: 2px; align-self: stretch; flex-shrink: 0; }
+    .u-normale { background: var(--green); }
+    .u-haute    { background: var(--amber); }
+    .u-bloquant { background: var(--accent); }
+
+    .r-body { flex: 1; min-width: 0; }
+    .r-type { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .r-meta { font-size: 11.5px; color: var(--text-sec); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .r-comment { font-size: 12px; color: var(--text-sec); margin-top: 6px; line-height: 1.4; }
+    .r-id { font-family: var(--mono); font-size: 10px; color: var(--border); flex-shrink: 0; }
+
+    .u-tag { font-size: 11px; padding: 1px 7px; border-radius: 20px; font-weight: 500; }
+    .u-tag-normale { background: var(--green-light); color: var(--green); }
+    .u-tag-haute   { background: var(--amber-light); color: var(--amber); }
+    .u-tag-bloquant { background: var(--accent-light); color: var(--accent); }
+
+    .state-msg {
+      text-align: center; padding: 44px 20px;
+      color: var(--text-sec); font-size: 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-brand-dot"></div>
+    Signalements Logistique
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('new')">Nouveau</button>
+    <button class="nav-tab" onclick="showTab('history')">Historique</button>
+  </div>
+</nav>
+
+<main>
+
+  <!-- Config warning -->
+  <div class="banner" id="configBanner">
+    <strong>Firebase non configuré</strong>
+    Remplacez les valeurs FIREBASE CONFIGURATION dans le fichier index.html avant utilisation.
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       TAB : NOUVEAU SIGNALEMENT
+  ═══════════════════════════════════════ -->
+  <div id="tab-new">
+
+    <!-- STEP 1 — Choix du type -->
+    <div id="step1">
+      <div class="sec-title">Nouveau signalement</div>
+      <div class="sec-sub">Sélectionnez le type de problème à remonter au service méthode</div>
+
+      <div class="steps">
+        <div class="step active"><div class="step-num">1</div>&nbsp;Type</div>
+        <div class="step-sep"></div>
+        <div class="step"><div class="step-num">2</div>&nbsp;Détails</div>
+        <div class="step-sep"></div>
+        <div class="step"><div class="step-num">3</div>&nbsp;Envoi</div>
+      </div>
+
+      <!-- Support / contenant -->
+      <div class="cat-label">Support / contenant</div>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('S01')" data-type="S01">
+          <div class="type-code">S01</div>
+          <div class="type-name">Support non adapté</div>
+          <div class="type-desc">Contenant inadéquat pour le flux ou le type de pièce</div>
+        </div>
+        <div class="type-card" onclick="selectType('S02')" data-type="S02">
+          <div class="type-code">S02</div>
+          <div class="type-name">Contenant endommagé</div>
+          <div class="type-desc">Déformation, fissure, coinçage</div>
+        </div>
+        <div class="type-card" onclick="selectType('S03')" data-type="S03">
+          <div class="type-code">S03</div>
+          <div class="type-name">Kit sans N° support</div>
+          <div class="type-desc">Pièces déposées non démontées sans identifiant</div>
+        </div>
+        <div class="type-card" onclick="selectType('S04')" data-type="S04">
+          <div class="type-code">S04</div>
+          <div class="type-name">Kit hors flux</div>
+          <div class="type-desc">N° support connu mais pas intégré dans le flux</div>
+        </div>
+      </div>
+
+      <!-- Pièces -->
+      <div class="cat-label">Pièces</div>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('P01')" data-type="P01">
+          <div class="type-code">P01</div>
+          <div class="type-name">Manque de pièce</div>
+          <div class="type-desc">Quantité inférieure à l'attendu</div>
+        </div>
+        <div class="type-card" onclick="selectType('P02')" data-type="P02">
+          <div class="type-code">P02</div>
+          <div class="type-name">Surplus de pièces</div>
+          <div class="type-desc">Quantité supérieure à l'attendu</div>
+        </div>
+        <div class="type-card" onclick="selectType('P03')" data-type="P03">
+          <div class="type-code">P03</div>
+          <div class="type-name">Référence incorrecte</div>
+          <div class="type-desc">Pièce reçue différente de la référence attendue</div>
+        </div>
+        <div class="type-card" onclick="selectType('P04')" data-type="P04">
+          <div class="type-code">P04</div>
+          <div class="type-name">Pièce endommagée</div>
+          <div class="type-desc">Défaut visible, pièce non conforme ou inutilisable</div>
+        </div>
+      </div>
+
+      <!-- Traçabilité -->
+      <div class="cat-label">Traçabilité</div>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('T01')" data-type="T01">
+          <div class="type-code">T01</div>
+          <div class="type-name">Étiquette illisible / manquante</div>
+          <div class="type-desc">Code-barres non scannable ou absent</div>
+        </div>
+        <div class="type-card" onclick="selectType('T02')" data-type="T02">
+          <div class="type-code">T02</div>
+          <div class="type-name">Erreur de localisation</div>
+          <div class="type-desc">Emplacement terrain différent du système</div>
+        </div>
+        <div class="type-card" onclick="selectType('T03')" data-type="T03">
+          <div class="type-code">T03</div>
+          <div class="type-name">Non-respect du FIFO</div>
+          <div class="type-desc">Lot plus récent consommé avant un lot plus ancien</div>
+        </div>
+      </div>
+
+      <!-- Système -->
+      <div class="cat-label">Système</div>
+      <div class="type-grid">
+        <div class="type-card" onclick="selectType('SY1')" data-type="SY1">
+          <div class="type-code">SY1</div>
+          <div class="type-name">Problème de mouvement</div>
+          <div class="type-desc">Mouvement incorrect, manquant ou incohérent</div>
+        </div>
+        <div class="type-card" onclick="selectType('SY2')" data-type="SY2">
+          <div class="type-code">SY2</div>
+          <div class="type-name">Problème logiciel</div>
+          <div class="type-desc">Dysfonctionnement applicatif bloquant</div>
+        </div>
+      </div>
+    </div><!-- /step1 -->
+
+    <!-- STEP 2 — Formulaire -->
+    <div id="step2" class="hidden">
+      <button class="btn btn-ghost" onclick="backToStep1()" style="margin-bottom:16px">← Retour</button>
+      <div class="sec-title" id="formTitle">Détails du signalement</div>
+      <div class="sec-sub" id="formSub"></div>
+
+      <div class="steps">
+        <div class="step done"><div class="step-num">✓</div>&nbsp;Type</div>
+        <div class="step-sep"></div>
+        <div class="step active"><div class="step-num">2</div>&nbsp;Détails</div>
+        <div class="step-sep"></div>
+        <div class="step"><div class="step-num">3</div>&nbsp;Envoi</div>
+      </div>
+
+      <!-- Infos générales -->
+      <div class="card">
+        <div class="card-title">
+          Informations générales
+          <span class="type-badge" id="formBadge"></span>
+        </div>
+        <div class="fields-row">
+          <div class="field">
+            <label>Identifiant agent <span class="req">*</span></label>
+            <input type="text" id="agentId" placeholder="ex: DUPONT.J" autocomplete="off">
+          </div>
+          <div class="field">
+            <label>Zone / secteur <span class="req">*</span></label>
+            <input type="text" id="zone" placeholder="ex: Zone A3 / Ligne 2">
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Niveau d'urgence <span class="req">*</span></label>
+          <div class="urgency-row">
+            <div class="urgency-opt selected" data-val="normale" onclick="setUrgency('normale')">Normale</div>
+            <div class="urgency-opt" data-val="haute" onclick="setUrgency('haute')">Haute</div>
+            <div class="urgency-opt" data-val="bloquant" onclick="setUrgency('bloquant')">Bloquant</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Champs spécifiques (injectés) -->
+      <div class="card" id="specificCard">
+        <div class="card-title" id="specificTitle">Détails</div>
+        <div id="specificFields"></div>
+      </div>
+
+      <!-- Commentaire -->
+      <div class="card">
+        <div class="card-title">Commentaire libre</div>
+        <textarea id="comment" placeholder="Contexte, actions déjà réalisées, informations complémentaires…" rows="3" style="margin-bottom:0"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-ghost" onclick="backToStep1()">Annuler</button>
+        <button class="btn btn-primary" id="submitBtn" onclick="submitReport()">
+          Envoyer le signalement →
+        </button>
+      </div>
+    </div><!-- /step2 -->
+
+    <!-- STEP 3 — Succès -->
+    <div id="step3" class="hidden">
+      <div class="success-wrap">
+        <div class="success-icon">✓</div>
+        <div class="success-title">Signalement envoyé</div>
+        <div class="success-sub">Le service méthode logistique a été notifié.</div>
+        <div class="success-id" id="successId"></div>
+        <button class="btn btn-primary" onclick="resetForm()" style="max-width:260px;margin:0 auto">
+          Nouveau signalement
+        </button>
+      </div>
+    </div>
+
+  </div><!-- /tab-new -->
+
+
+  <!-- ═══════════════════════════════════════
+       TAB : HISTORIQUE
+  ═══════════════════════════════════════ -->
+  <div id="tab-history" class="hidden">
+    <div class="sec-title">Historique</div>
+    <div class="sec-sub">50 derniers signalements — du plus récent au plus ancien</div>
+
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterHistory('all',this)">Tous</button>
+      <button class="filter-btn" onclick="filterHistory('bloquant',this)">Bloquant</button>
+      <button class="filter-btn" onclick="filterHistory('haute',this)">Haute</button>
+      <button class="filter-btn" onclick="filterHistory('S',this)">Support</button>
+      <button class="filter-btn" onclick="filterHistory('P',this)">Pièces</button>
+      <button class="filter-btn" onclick="filterHistory('T',this)">Traçabilité</button>
+      <button class="filter-btn" onclick="filterHistory('SY',this)">Système</button>
+    </div>
+
+    <div id="historyContent">
+      <div class="state-msg">Chargement…</div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ════════════════════════════════════════════════════════════
+//  FIREBASE CONFIGURATION
+//  1. Allez sur https://console.firebase.google.com
+//  2. Créez un projet, puis une app Web
+//  3. Copiez-collez les valeurs ci-dessous
+//  4. Dans Firestore : créez une collection "signalements"
+// ════════════════════════════════════════════════════════════
+const FIREBASE_CONFIG = {
+  apiKey:            "VOTRE_API_KEY",
+  authDomain:        "VOTRE_PROJECT.firebaseapp.com",
+  projectId:         "VOTRE_PROJECT_ID",
+  storageBucket:     "VOTRE_PROJECT.firebasestorage.app",
+  messagingSenderId: "VOTRE_SENDER_ID",
+  appId:             "VOTRE_APP_ID"
+};
+// ════════════════════════════════════════════════════════════
+
+// ─── Init Firebase ───────────────────────────────────────────
+let db = null;
+(function initFirebase() {
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    if (FIREBASE_CONFIG.apiKey === 'VOTRE_API_KEY') {
+      document.getElementById('configBanner').classList.add('show');
+    }
+  } catch(e) {
+    document.getElementById('configBanner').classList.add('show');
+    console.error('Firebase init error:', e);
+  }
+})();
+
+// ─── Types & champs spécifiques ──────────────────────────────
+const TYPES = {
+  S01: {
+    label: 'Support non adapté',
+    fields: () => `
+      <div class="field">
+        <label>Numéro de support <span class="req">*</span></label>
+        <input type="text" id="f_support" class="mono-input" placeholder="ex: SUP-00421">
+      </div>
+      <div class="field">
+        <label>Type de pièce concernée</label>
+        <input type="text" id="f_piece" placeholder="ex: Moteurs, visserie M8">
+      </div>
+      <div class="field">
+        <label>Raison <span class="req">*</span></label>
+        <select id="f_raison">
+          <option value="">— Sélectionner —</option>
+          <option>Taille inadaptée</option>
+          <option>Matériau inadapté</option>
+          <option>Poids / charge non adapté</option>
+          <option>Formatage non conforme</option>
+          <option>Autre</option>
+        </select>
+      </div>`
+  },
+  S02: {
+    label: 'Contenant endommagé',
+    fields: () => `
+      <div class="field">
+        <label>Numéro de support <span class="req">*</span></label>
+        <input type="text" id="f_support" class="mono-input" placeholder="ex: SUP-00421">
+      </div>
+      <div class="field">
+        <label>Nature du dommage <span class="req">*</span></label>
+        <select id="f_dommage">
+          <option value="">— Sélectionner —</option>
+          <option>Déformation</option>
+          <option>Fissure / cassure</option>
+          <option>Coinçage / fermeture impossible</option>
+          <option>Fond enfoncé</option>
+          <option>Autre</option>
+        </select>
+      </div>`
+  },
+  S03: {
+    label: 'Kit sans N° support',
+    fields: () => `
+      <div class="field">
+        <label>Localisation du dépôt <span class="req">*</span></label>
+        <input type="text" id="f_localisation" placeholder="ex: Allée B / Case 14">
+      </div>
+      <div class="field">
+        <label>Référence pièces (si connue)</label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>
+      <div class="field">
+        <label>Nombre de pièces estimé</label>
+        <input type="number" id="f_qte" min="0" placeholder="ex: 12">
+      </div>`
+  },
+  S04: {
+    label: 'Kit hors flux',
+    fields: () => `
+      <div class="field">
+        <label>Numéro de support <span class="req">*</span></label>
+        <input type="text" id="f_support" class="mono-input" placeholder="ex: SUP-00421">
+      </div>
+      <div class="field">
+        <label>Référence kit</label>
+        <input type="text" id="f_kit" class="mono-input" placeholder="ex: KIT-0089">
+      </div>
+      <div class="field">
+        <label>Localisation actuelle <span class="req">*</span></label>
+        <input type="text" id="f_localisation" placeholder="ex: Zone C / Rack 3">
+      </div>`
+  },
+  P01: {
+    label: 'Manque de pièce',
+    fields: () => `
+      <div class="field">
+        <label>Référence pièce <span class="req">*</span></label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>
+      <div class="fields-row">
+        <div class="field">
+          <label>Qté attendue</label>
+          <input type="number" id="f_qte_attendue" min="0" placeholder="ex: 10">
+        </div>
+        <div class="field">
+          <label>Qté reçue <span class="req">*</span></label>
+          <input type="number" id="f_qte_recue" min="0" placeholder="ex: 7">
+        </div>
+      </div>
+      <div class="field">
+        <label>Numéro OT</label>
+        <input type="text" id="f_ot" class="mono-input" placeholder="ex: OT-20240312">
+        <div class="field-warn">Ce signalement ne remplace pas le commentaire OT obligatoire dans le système.</div>
+      </div>`
+  },
+  P02: {
+    label: 'Surplus de pièces',
+    fields: () => `
+      <div class="field">
+        <label>Référence pièce <span class="req">*</span></label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>
+      <div class="fields-row">
+        <div class="field">
+          <label>Qté attendue</label>
+          <input type="number" id="f_qte_attendue" min="0" placeholder="ex: 10">
+        </div>
+        <div class="field">
+          <label>Qté réelle <span class="req">*</span></label>
+          <input type="number" id="f_qte_recue" min="0" placeholder="ex: 15">
+        </div>
+      </div>
+      <div class="field">
+        <label>Numéro de support</label>
+        <input type="text" id="f_support" class="mono-input" placeholder="ex: SUP-00421">
+      </div>`
+  },
+  P03: {
+    label: 'Référence incorrecte',
+    fields: () => `
+      <div class="fields-row">
+        <div class="field">
+          <label>Référence attendue <span class="req">*</span></label>
+          <input type="text" id="f_ref_attendue" class="mono-input" placeholder="ex: REF-7842">
+        </div>
+        <div class="field">
+          <label>Référence reçue <span class="req">*</span></label>
+          <input type="text" id="f_ref_recue" class="mono-input" placeholder="ex: REF-7844">
+        </div>
+      </div>
+      <div class="field">
+        <label>Numéro de support</label>
+        <input type="text" id="f_support" class="mono-input" placeholder="ex: SUP-00421">
+      </div>`
+  },
+  P04: {
+    label: 'Pièce endommagée / non conforme',
+    fields: () => `
+      <div class="field">
+        <label>Référence pièce <span class="req">*</span></label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>
+      <div class="field">
+        <label>Nature du défaut <span class="req">*</span></label>
+        <input type="text" id="f_defaut" placeholder="ex: Choc bride gauche, filetage endommagé">
+      </div>
+      <div class="field">
+        <label>Numéro de support</label>
+        <input type="text" id="f_support" class="mono-input" placeholder="ex: SUP-00421">
+      </div>`
+  },
+  T01: {
+    label: 'Étiquette illisible / manquante',
+    fields: () => `
+      <div class="field">
+        <label>Type de problème <span class="req">*</span></label>
+        <select id="f_type_etiquette">
+          <option value="">— Sélectionner —</option>
+          <option>Illisible (code-barres abîmé)</option>
+          <option>Manquante</option>
+          <option>Mauvaise étiquette (référence erronée)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Localisation <span class="req">*</span></label>
+        <input type="text" id="f_localisation" placeholder="ex: Zone B / Rack 7 / Niveau 2">
+      </div>
+      <div class="field">
+        <label>Référence si connue</label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>`
+  },
+  T02: {
+    label: 'Erreur de localisation',
+    fields: () => `
+      <div class="field">
+        <label>Référence pièce <span class="req">*</span></label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>
+      <div class="fields-row">
+        <div class="field">
+          <label>Adresse système</label>
+          <input type="text" id="f_adr_sys" class="mono-input" placeholder="ex: A1-R3-N2">
+        </div>
+        <div class="field">
+          <label>Adresse terrain <span class="req">*</span></label>
+          <input type="text" id="f_adr_terrain" class="mono-input" placeholder="ex: B2-R7-N1">
+        </div>
+      </div>`
+  },
+  T03: {
+    label: 'Non-respect du FIFO',
+    fields: () => `
+      <div class="field">
+        <label>Référence pièce <span class="req">*</span></label>
+        <input type="text" id="f_ref" class="mono-input" placeholder="ex: REF-7842">
+      </div>
+      <div class="fields-row">
+        <div class="field">
+          <label>N° lot consommé</label>
+          <input type="text" id="f_lot_consomme" class="mono-input" placeholder="ex: LOT-2024-03">
+        </div>
+        <div class="field">
+          <label>N° lot plus ancien</label>
+          <input type="text" id="f_lot_ancien" class="mono-input" placeholder="ex: LOT-2024-01">
+        </div>
+      </div>`
+  },
+  SY1: {
+    label: 'Problème de mouvement',
+    fields: () => `
+      <div class="field">
+        <label>N° OT / mouvement <span class="req">*</span></label>
+        <input type="text" id="f_ot" class="mono-input" placeholder="ex: OT-20240312 / MVT-004821">
+      </div>
+      <div class="field">
+        <label>Type de mouvement <span class="req">*</span></label>
+        <select id="f_type_mvt">
+          <option value="">— Sélectionner —</option>
+          <option>Entrée</option>
+          <option>Sortie</option>
+          <option>Transfert</option>
+          <option>Inventaire</option>
+          <option>Retour</option>
+          <option>Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Description <span class="req">*</span></label>
+        <input type="text" id="f_description" placeholder="ex: Mouvement en double, stock négatif…">
+      </div>`
+  },
+  SY2: {
+    label: 'Problème logiciel',
+    fields: () => `
+      <div class="field">
+        <label>Application concernée <span class="req">*</span></label>
+        <select id="f_app">
+          <option value="">— Sélectionner —</option>
+          <option>WMS</option>
+          <option>ERP / SAP</option>
+          <option>Terminal / scan</option>
+          <option>Imprimante étiquettes</option>
+          <option>Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Action réalisée</label>
+        <input type="text" id="f_action" placeholder="ex: Tentative de création d'un OT">
+      </div>
+      <div class="field">
+        <label>Message d'erreur</label>
+        <input type="text" id="f_erreur" class="mono-input" placeholder="ex: Erreur 500 / Session expirée">
+      </div>`
+  }
+};
+
+// ─── State ──────────────────────────────────────────────────
+let currentType    = null;
+let currentUrgency = 'normale';
+let allReports     = [];
+let currentFilter  = 'all';
+
+// ─── Tab navigation ─────────────────────────────────────────
+function showTab(tab) {
+  document.getElementById('tab-new').classList.toggle('hidden', tab !== 'new');
+  document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
+  document.querySelectorAll('.nav-tab').forEach((btn, i) => {
+    btn.classList.toggle('active', (tab === 'new' && i === 0) || (tab === 'history' && i === 1));
+  });
+  if (tab === 'history') loadHistory();
+}
+
+// ─── Type selection ─────────────────────────────────────────
+function selectType(code) {
+  currentType = code;
+  const def = TYPES[code];
+
+  // Highlight selected card
+  document.querySelectorAll('.type-card').forEach(c =>
+    c.classList.toggle('selected', c.dataset.type === code)
+  );
+
+  // Populate form
+  document.getElementById('formTitle').textContent = def.label;
+  document.getElementById('formBadge').textContent = code;
+  document.getElementById('specificTitle').textContent = 'Détails — ' + def.label;
+  document.getElementById('specificFields').innerHTML = def.fields();
+
+  // Switch views
+  document.getElementById('step1').classList.add('hidden');
+  document.getElementById('step2').classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+function backToStep1() {
+  document.getElementById('step1').classList.remove('hidden');
+  document.getElementById('step2').classList.add('hidden');
+  document.getElementById('step3').classList.add('hidden');
+  window.scrollTo(0, 0);
+}
+
+// ─── Urgency ────────────────────────────────────────────────
+function setUrgency(val) {
+  currentUrgency = val;
+  document.querySelectorAll('.urgency-opt').forEach(o =>
+    o.classList.toggle('selected', o.dataset.val === val)
+  );
+}
+
+// ─── Gather specific field data ─────────────────────────────
+function gatherSpecificData() {
+  const data = {};
+  document.querySelectorAll('#specificFields input, #specificFields select, #specificFields textarea')
+    .forEach(el => {
+      if (el.id) data[el.id.replace('f_', '')] = el.value.trim();
+    });
+  return data;
+}
+
+// ─── Submit ─────────────────────────────────────────────────
+async function submitReport() {
+  const agentId = document.getElementById('agentId').value.trim();
+  const zone    = document.getElementById('zone').value.trim();
+
+  if (!agentId || !zone) {
+    alert('Veuillez renseigner l\'identifiant agent et la zone.');
+    return;
+  }
+  if (!db) {
+    alert('Firebase non configuré. Impossible d\'envoyer le signalement.');
+    return;
+  }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Envoi en cours…';
+
+  const report = {
+    type:          currentType,
+    typeLabel:     TYPES[currentType].label,
+    urgency:       currentUrgency,
+    agentId,
+    zone,
+    comment:       document.getElementById('comment').value.trim(),
+    specificData:  gatherSpecificData(),
+    createdAt:     firebase.firestore.FieldValue.serverTimestamp(),
+    createdAtLocal: new Date().toISOString()
+  };
+
+  try {
+    const ref = await db.collection('signalements').add(report);
+    document.getElementById('step2').classList.add('hidden');
+    document.getElementById('step3').classList.remove('hidden');
+    document.getElementById('successId').textContent = 'Réf. : ' + ref.id.substring(0, 8).toUpperCase();
+    window.scrollTo(0, 0);
+  } catch(e) {
+    alert('Erreur lors de l\'envoi :\n' + e.message);
+    btn.disabled = false;
+    btn.textContent = 'Envoyer le signalement →';
+  }
+}
+
+// ─── Reset form ─────────────────────────────────────────────
+function resetForm() {
+  currentType    = null;
+  currentUrgency = 'normale';
+  document.querySelectorAll('.type-card').forEach(c => c.classList.remove('selected'));
+  ['agentId','zone','comment'].forEach(id => document.getElementById(id).value = '');
+  document.querySelectorAll('.urgency-opt').forEach(o =>
+    o.classList.toggle('selected', o.dataset.val === 'normale')
+  );
+  document.getElementById('step3').classList.add('hidden');
+  document.getElementById('step1').classList.remove('hidden');
+  window.scrollTo(0, 0);
+}
+
+// ─── History ────────────────────────────────────────────────
+async function loadHistory() {
+  document.getElementById('historyContent').innerHTML = '<div class="state-msg">Chargement…</div>';
+  if (!db) {
+    document.getElementById('historyContent').innerHTML =
+      '<div class="state-msg">Firebase non configuré.</div>';
+    return;
+  }
+  try {
+    const snap = await db.collection('signalements')
+      .orderBy('createdAt', 'desc')
+      .limit(50)
+      .get();
+    allReports = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderHistory();
+  } catch(e) {
+    document.getElementById('historyContent').innerHTML =
+      '<div class="state-msg">Impossible de charger les données.<br>Vérifiez la configuration Firebase et les règles Firestore.</div>';
+  }
+}
+
+function filterHistory(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  let list = allReports;
+
+  if (currentFilter === 'bloquant') list = list.filter(r => r.urgency === 'bloquant');
+  else if (currentFilter === 'haute') list = list.filter(r => r.urgency === 'haute');
+  else if (currentFilter !== 'all') list = list.filter(r => r.type && r.type.startsWith(currentFilter));
+
+  if (list.length === 0) {
+    document.getElementById('historyContent').innerHTML =
+      '<div class="state-msg">Aucun signalement pour ce filtre.</div>';
+    return;
+  }
+
+  const html = list.map(r => {
+    const dateStr = r.createdAtLocal
+      ? new Date(r.createdAtLocal).toLocaleString('fr-FR', {
+          day: '2-digit', month: '2-digit', year: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        })
+      : '—';
+    const urg = r.urgency || 'normale';
+    return `
+      <div class="report-item">
+        <div class="u-bar u-${urg}"></div>
+        <div class="r-body">
+          <div class="r-type">${r.typeLabel || r.type || '—'}</div>
+          <div class="r-meta">
+            <span class="u-tag u-tag-${urg}">${urg}</span>
+            <span>${r.agentId || '—'}</span>
+            <span>${r.zone || '—'}</span>
+            <span>${dateStr}</span>
+          </div>
+          ${r.comment ? `<div class="r-comment">${r.comment}</div>` : ''}
+        </div>
+        <div class="r-id">${r.id.substring(0, 8).toUpperCase()}</div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('historyContent').innerHTML =
+    `<div class="report-list">${html}</div>`;
+}
+</script>
+</body>
+</html>
