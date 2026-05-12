@@ -1,0 +1,171 @@
+{
+  "start": "root",
+  "nodes": {
+
+    "root": {
+      "type": "select",
+      "tag": "Catégorie",
+      "question": "Quel type d'anomalie souhaitez-vous déclarer ?",
+      "options": [
+        { "label": "Contenant", "next": "contenant_fields" },
+        { "label": "Flux",      "next": "flux_type"        },
+        { "label": "Logiciel",  "next": "logiciel_type"    }
+      ]
+    },
+
+    "contenant_fields": {
+      "type": "fields",
+      "tag": "Identification",
+      "question": "Identification du matériel concerné",
+      "fields": [
+        { "key": "support", "label": "Support *",  "placeholder": "Ex : Support S45",   "required": true  },
+        { "key": "kit",     "label": "Kit *",      "placeholder": "Ex : Kit frein 273", "required": true  },
+        { "key": "engin",   "label": "Engin *",    "placeholder": "Ex : TER X73500",    "required": true  }
+      ],
+      "next": "contenant_soustype"
+    },
+
+    "contenant_soustype": {
+      "type": "select",
+      "tag": "Contenant – Sous-catégorie",
+      "question": "Nature du problème contenant ?",
+      "options": [
+        { "label": "Logique / Physique", "next": "logphys_type" },
+        { "label": "Physique",           "next": "phys_type"    }
+      ]
+    },
+
+    "logphys_type": {
+      "type": "select",
+      "tag": "Contenant – Logique / Physique",
+      "question": "Type de problème logique/physique ?",
+      "options": [
+        { "label": "Type de contenant non adapté", "next": "taille" }
+      ]
+    },
+
+    "taille": {
+      "type": "select",
+      "tag": "Taille",
+      "question": "Le contenant est-il…",
+      "options": [
+        { "label": "Trop grand", "next": "preco" },
+        { "label": "Trop petit", "next": "preco" }
+      ]
+    },
+
+    "preco": {
+      "type": "text",
+      "tag": "Préconisation",
+      "question": "Quelle est la préconisation ?",
+      "field": "preco",
+      "placeholder": "Ex : Remplacer par modèle B-23",
+      "required": false,
+      "next": "commentaire"
+    },
+
+    "phys_type": {
+      "type": "select",
+      "tag": "Contenant – Physique",
+      "question": "Type de problème physique ?",
+      "options": [
+        { "label": "Contenant HS", "next": "matiere" }
+      ]
+    },
+
+    "matiere": {
+      "type": "select",
+      "tag": "Matière",
+      "question": "Matière du contenant HS ?",
+      "options": [
+        { "label": "Bois", "next": "reparation" },
+        { "label": "Fer",  "next": "reparation" }
+      ]
+    },
+
+    "reparation": {
+      "type": "select",
+      "tag": "Réparation",
+      "question": "Le contenant peut-il être réparé ?",
+      "options": [
+        { "label": "Oui",                              "next": "stockage_hs" },
+        { "label": "Non → Valorisation Matière (VM)",  "next": "vm_info"     },
+        { "label": "Je ne sais pas",                   "next": "commentaire" }
+      ]
+    },
+
+    "stockage_hs": {
+      "type": "text",
+      "tag": "Stockage HS",
+      "question": "Emplacement de stockage HS ?",
+      "field": "stockage_hs",
+      "placeholder": "Ex : Zone HS – Allée 3, étagère B",
+      "required": true,
+      "next": "commentaire"
+    },
+
+    "vm_info": {
+      "type": "info",
+      "tag": "Action requise",
+      "question": "Orientation du contenant",
+      "message": "Le contenant non réparable sera orienté vers la Valorisation Matière (VM).",
+      "next": "commentaire"
+    },
+
+    "flux_type": {
+      "type": "select",
+      "tag": "Flux",
+      "question": "Type de problème flux ?",
+      "options": [
+        { "label": "Appro manquant",              "next": "fields_default" },
+        { "label": "Pièce dep manquante",         "next": "fields_default" },
+        { "label": "Blocage en entrée MAG2EPRE",  "next": "fields_default" },
+        { "label": "Blocage en sortie MAG2SPRE",  "next": "fields_default" }
+      ]
+    },
+
+    "fields_default": {
+      "type": "fields",
+      "tag": "Identification",
+      "question": "Identification du matériel concerné",
+      "fields": [
+        { "key": "support", "label": "Support *",  "placeholder": "Ex : Support S45",   "required": true },
+        { "key": "kit",     "label": "Kit *",      "placeholder": "Ex : Kit frein 273", "required": true },
+        { "key": "engin",   "label": "Engin *",    "placeholder": "Ex : TER X73500",    "required": true }
+      ],
+      "next": "commentaire"
+    },
+
+    "logiciel_type": {
+      "type": "select",
+      "tag": "Logiciel",
+      "question": "Type de problème logiciel ?",
+      "options": [
+        { "label": "Déclenchement de mouvement HS", "next": "fields_kit_mere" }
+      ]
+    },
+
+    "fields_kit_mere": {
+      "type": "fields",
+      "tag": "Identification – Kit mère",
+      "question": "Identification du kit mère concerné",
+      "fields": [
+        { "key": "support", "label": "Support *",  "placeholder": "Ex : Support S45",   "required": true },
+        { "key": "kit",     "label": "Kit mère *", "placeholder": "Ex : Kit frein 273", "required": true },
+        { "key": "engin",   "label": "Engin *",    "placeholder": "Ex : TER X73500",    "required": true }
+      ],
+      "next": "commentaire"
+    },
+
+    "commentaire": {
+      "type": "textarea",
+      "tag": "Étape finale",
+      "question": "Un commentaire à ajouter ?",
+      "field": "commentaire",
+      "placeholder": "Description complémentaire, référence, contexte… (optionnel)",
+      "required": false,
+      "next": null
+    }
+
+  }
+}
