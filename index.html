@@ -439,12 +439,12 @@
    🔥  FIREBASE — REMPLACEZ CES VALEURS PAR VOTRE PROJET
    ================================================================ */
 const firebaseConfig = {
-  apiKey:            "VOTRE_API_KEY",
-  authDomain:        "VOTRE_PROJECT.firebaseapp.com",
-  projectId:         "VOTRE_PROJECT_ID",
-  storageBucket:     "VOTRE_PROJECT.appspot.com",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId:             "VOTRE_APP_ID"
+  apiKey: "AIzaSyARI0sADSyvYcTwaSlK0TpvLY0uwL2BlRw",
+  authDomain: "rassemblement-b7927.firebaseapp.com",
+  projectId: "rassemblement-b7927",
+  storageBucket: "rassemblement-b7927.firebasestorage.app",
+  messagingSenderId: "127334162906",
+  appId: "1:127334162906:web:92c2e6281c93df6eab20e3"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -481,13 +481,13 @@ function fieldsStep(libelle, fields, nextFn) {
 }
 
 const FIELDS_DEFAULT = [
-  { key: "support", label: "Support *",  placeholder: "Ex : Support S45",   required: true },
-  { key: "kit",     label: "Kit *",      placeholder: "Ex : Kit frein 273", required: true },
+  { key: "support", label: "Support *",  placeholder: "Ex : 052000......",   required: true },
+  { key: "kit",     label: "Kit *",      placeholder: "Ex : K21ME47", required: true },
   { key: "engin",   label: "Engin *",    placeholder: "Ex : TER X73500",    required: true }
 ];
 
 const FIELDS_KIT_MERE = [
-  { key: "support", label: "Support *",    placeholder: "Ex : Support S45",   required: true },
+  { key: "support", label: "Support *",    placeholder: "Ex : 052000......",   required: true },
   { key: "kit",     label: "Kit mère *",   placeholder: "Ex : Kit frein 273", required: true },
   { key: "engin",   label: "Engin *",      placeholder: "Ex : TER X73500",    required: true }
 ];
