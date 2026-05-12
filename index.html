@@ -7,6 +7,7 @@
 
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
   <style>
@@ -33,6 +34,148 @@
       min-height: 100vh;
       color: #111827;
     }
+
+    /* ══════════════════════════════════════════
+       PAGE DE CONNEXION
+    ══════════════════════════════════════════ */
+    #login-view {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      background: var(--primary);
+    }
+
+    .login-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 36px 32px 32px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+      animation: login-pop .35s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes login-pop {
+      from { opacity:0; transform: scale(.92) translateY(20px); }
+      to   { opacity:1; transform: scale(1)   translateY(0); }
+    }
+
+    .login-logo {
+      width: 52px; height: 52px;
+      background: var(--accent);
+      border-radius: 14px;
+      display: grid; place-items: center;
+      font-size: 26px;
+      margin: 0 auto 20px;
+    }
+
+    .login-card h1 {
+      text-align: center;
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--primary);
+      margin-bottom: 4px;
+      letter-spacing: -.02em;
+    }
+    .login-card .login-subtitle {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 28px;
+    }
+
+    .login-field {
+      margin-bottom: 14px;
+    }
+    .login-field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      margin-bottom: 6px;
+    }
+    .login-field input {
+      width: 100%;
+      padding: 13px 15px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 15px;
+      color: #111827;
+      background: var(--bg);
+      outline: none;
+      transition: border-color .15s, background .15s;
+      font-family: var(--font);
+    }
+    .login-field input:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+    .login-field input.error {
+      border-color: #dc2626;
+      background: #fff5f5;
+    }
+
+    .login-error {
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 9px;
+      padding: 11px 14px;
+      font-size: 13px;
+      color: #dc2626;
+      font-weight: 500;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .login-error.show { display: block; }
+
+    .btn-login {
+      width: 100%;
+      padding: 15px;
+      background: var(--accent);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 700;
+      border: none;
+      border-radius: 11px;
+      cursor: pointer;
+      font-family: var(--font);
+      transition: filter .15s, transform .1s;
+      margin-top: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-login:hover   { filter: brightness(1.08); }
+    .btn-login:active  { transform: scale(.98); }
+    .btn-login:disabled { opacity: .55; cursor: not-allowed; }
+
+    .login-footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+    }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2.5px solid rgba(255,255,255,.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ══════════════════════════════════════════
+       APP PRINCIPALE (masquée avant connexion)
+    ══════════════════════════════════════════ */
+    #app-view { display: none; }
 
     /* ── Header ── */
     header {
@@ -66,7 +209,7 @@
       gap: 8px;
     }
 
-    .btn-history {
+    .btn-header {
       background: rgba(255,255,255,0.12);
       color: #fff;
       border: none;
@@ -76,8 +219,37 @@
       cursor: pointer;
       font-family: var(--font);
       transition: background .15s;
+      white-space: nowrap;
     }
-    .btn-history:hover { background: rgba(255,255,255,0.22); }
+    .btn-header:hover { background: rgba(255,255,255,0.22); }
+
+    .user-chip {
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 100px;
+      padding: 5px 12px 5px 8px;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.75);
+      max-width: 180px;
+    }
+    .user-avatar {
+      width: 22px; height: 22px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: grid; place-items: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: #fff;
+    }
+    .user-email {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
     /* ── Container ── */
     .container {
@@ -156,7 +328,7 @@
       margin-bottom: 18px;
     }
 
-    /* ── Options (select buttons) ── */
+    /* ── Options ── */
     .options { display: flex; flex-direction: column; gap: 10px; }
 
     .opt-btn {
@@ -382,61 +554,90 @@
       color: var(--muted);
     }
     .empty-state p { font-size: 15px; }
-
-    /* ── Loading ── */
-    .spinner {
-      width: 22px; height: 22px;
-      border: 3px solid #fff3;
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin .7s linear infinite;
-      display: inline-block;
-      vertical-align: middle;
-      margin-right: 8px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="logo">⚠</div>
-  <div>
+<!-- ══════════════════════════════════════════
+     PAGE DE CONNEXION
+══════════════════════════════════════════ -->
+<div id="login-view">
+  <div class="login-card">
+    <div class="login-logo">⚠</div>
     <h1>Déclaration d'anomalie</h1>
-    <p>Rassemblement de kit</p>
-  </div>
-  <div class="header-right">
-    <button class="btn-history" onclick="toggleHistory()">📋 Historique</button>
-  </div>
-</header>
+    <p class="login-subtitle">Rassemblement de kit · Connexion requise</p>
 
-<div class="container">
-  <div id="form-view">
-    <div class="progress-wrap">
-      <div class="progress-track">
-        <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+    <div class="login-error" id="login-error"></div>
+
+    <div class="login-field">
+      <label>Adresse e-mail</label>
+      <input type="email" id="login-email" placeholder="prenom.nom@entreprise.fr"
+             autocomplete="username" />
+    </div>
+
+    <div class="login-field">
+      <label>Mot de passe</label>
+      <input type="password" id="login-password" placeholder="••••••••"
+             autocomplete="current-password" />
+    </div>
+
+    <button class="btn-login" id="login-btn" onclick="doLogin()">
+      Se connecter
+    </button>
+  </div>
+
+  <p class="login-footer">Accès réservé au personnel autorisé</p>
+</div>
+
+<!-- ══════════════════════════════════════════
+     APP PRINCIPALE
+══════════════════════════════════════════ -->
+<div id="app-view">
+  <header>
+    <div class="logo">⚠</div>
+    <div>
+      <h1>Déclaration d'anomalie</h1>
+      <p>Rassemblement de kit</p>
+    </div>
+    <div class="header-right">
+      <!-- Chip utilisateur connecté -->
+      <div class="user-chip" id="user-chip" title="Utilisateur connecté">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <span class="user-email" id="user-email-display">—</span>
       </div>
-      <div class="progress-label" id="progress-label">Étape 1</div>
+      <button class="btn-header" onclick="toggleHistory()">📋 Historique</button>
+      <button class="btn-header" onclick="doLogout()" title="Se déconnecter">🔓 Déco.</button>
     </div>
-    <div class="breadcrumb" id="breadcrumb"></div>
-    <div id="step-container"></div>
-  </div>
+  </header>
 
-  <div class="history-wrap" id="history-view">
-    <div class="card" style="margin-bottom:0">
-      <div class="step-tag">Historique</div>
-      <div class="step-question" style="font-size:17px; margin-bottom:16px;">Anomalies déclarées</div>
-      <div id="history-list"><p class="empty-state" style="padding:20px 0">Chargement…</p></div>
+  <div class="container">
+    <div id="form-view">
+      <div class="progress-wrap">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-bar" style="width:0%"></div>
+        </div>
+        <div class="progress-label" id="progress-label">Étape 1</div>
+      </div>
+      <div class="breadcrumb" id="breadcrumb"></div>
+      <div id="step-container"></div>
     </div>
-    <div class="btn-row">
-      <button class="btn btn-next" onclick="toggleHistory()">← Nouvelle déclaration</button>
+
+    <div class="history-wrap" id="history-view">
+      <div class="card" style="margin-bottom:0">
+        <div class="step-tag">Historique</div>
+        <div class="step-question" style="font-size:17px; margin-bottom:16px;">Anomalies déclarées</div>
+        <div id="history-list"><p class="empty-state" style="padding:20px 0">Chargement…</p></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-next" onclick="toggleHistory()">← Nouvelle déclaration</button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 /* ================================================================
-   🔥  FIREBASE — REMPLACEZ CES VALEURS PAR VOTRE PROJET
+   🔥  FIREBASE CONFIG
    ================================================================ */
 const firebaseConfig = {
   apiKey: "AIzaSyARI0sADSyvYcTwaSlK0TpvLY0uwL2BlRw",
@@ -448,13 +649,112 @@ const firebaseConfig = {
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db   = firebase.firestore();
+const auth = firebase.auth();
+
+/* ================================================================
+   🔐  AUTHENTIFICATION
+   ================================================================ */
+
+/* Observer : réagit à chaque changement d'état de connexion */
+auth.onAuthStateChanged(user => {
+  if (user) {
+    showApp(user);
+  } else {
+    showLogin();
+  }
+});
+
+async function doLogin() {
+  const email    = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+  const btn      = document.getElementById("login-btn");
+  const errBox   = document.getElementById("login-error");
+
+  // Réinitialiser les erreurs
+  errBox.classList.remove("show");
+  document.getElementById("login-email").classList.remove("error");
+  document.getElementById("login-password").classList.remove("error");
+
+  if (!email || !password) {
+    showLoginError("Veuillez remplir tous les champs.");
+    if (!email)    document.getElementById("login-email").classList.add("error");
+    if (!password) document.getElementById("login-password").classList.add("error");
+    return;
+  }
+
+  // Chargement
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>&nbsp;Connexion…';
+
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    // onAuthStateChanged prend le relais → showApp()
+  } catch (err) {
+    btn.disabled = false;
+    btn.innerHTML = "Se connecter";
+
+    // Messages d'erreur en français
+    const msgs = {
+      "auth/user-not-found":       "Aucun compte trouvé pour cet e-mail.",
+      "auth/wrong-password":       "Mot de passe incorrect.",
+      "auth/invalid-email":        "Adresse e-mail invalide.",
+      "auth/too-many-requests":    "Trop de tentatives. Réessayez dans quelques minutes.",
+      "auth/invalid-credential":   "Identifiants incorrects. Vérifiez votre e-mail et mot de passe.",
+      "auth/network-request-failed": "Erreur réseau. Vérifiez votre connexion."
+    };
+    showLoginError(msgs[err.code] || "Erreur : " + err.message);
+  }
+}
+
+function showLoginError(msg) {
+  const box = document.getElementById("login-error");
+  box.textContent = "⚠ " + msg;
+  box.classList.add("show");
+}
+
+async function doLogout() {
+  if (!confirm("Se déconnecter ?")) return;
+  await auth.signOut();
+  // onAuthStateChanged → showLogin()
+}
+
+function showLogin() {
+  document.getElementById("login-view").style.display  = "flex";
+  document.getElementById("app-view").style.display    = "none";
+  // Réinitialiser le formulaire de login
+  document.getElementById("login-email").value    = "";
+  document.getElementById("login-password").value = "";
+  document.getElementById("login-error").classList.remove("show");
+  const btn = document.getElementById("login-btn");
+  btn.disabled = false;
+  btn.innerHTML = "Se connecter";
+}
+
+function showApp(user) {
+  document.getElementById("login-view").style.display = "none";
+  document.getElementById("app-view").style.display   = "block";
+
+  // Afficher l'e-mail de l'utilisateur dans le header
+  const email   = user.email || "";
+  const initial = email.charAt(0).toUpperCase();
+  document.getElementById("user-avatar").textContent       = initial;
+  document.getElementById("user-email-display").textContent = email;
+
+  // Initialiser l'app si ce n'est pas déjà fait
+  restart();
+}
+
+/* Soumettre le formulaire de login avec la touche Entrée */
+document.addEventListener("keydown", e => {
+  if (e.key === "Enter" && document.getElementById("login-view").style.display !== "none") {
+    doLogin();
+  }
+});
 
 /* ================================================================
    🌳  ARBORESCENCE COMPLÈTE DES ANOMALIES
    ================================================================ */
-
-/* --- Nœuds réutilisables --- */
 
 function commentStep() {
   return {
@@ -465,7 +765,7 @@ function commentStep() {
     field: "commentaire",
     placeholder: "Description complémentaire, référence, contexte… (optionnel)",
     required: false,
-    next: null   // → résumé
+    next: null
   };
 }
 
@@ -492,9 +792,6 @@ const FIELDS_KIT_MERE = [
   { key: "engin",   label: "Engin *",      placeholder: "Ex : TER X73500",    required: true }
 ];
 
-/* ---------------------------------------------------------
-   LOGICIEL
-   --------------------------------------------------------- */
 const logicielTree = {
   id: "logiciel_type",
   type: "select",
@@ -512,37 +809,19 @@ const logicielTree = {
   ]
 };
 
-/* ---------------------------------------------------------
-   FLUX
-   --------------------------------------------------------- */
 const fluxTree = {
   id: "flux_type",
   type: "select",
   tag: "Flux",
   question: "Type de problème flux ?",
   options: [
-    {
-      label: "Appro manquant",
-      next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep())
-    },
-    {
-      label: "Pièce dep manquante",
-      next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep())
-    },
-    {
-      label: "Blocage en entrée – MAG2EPRE",
-      next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep())
-    },
-    {
-      label: "Blocage en sortie – MAG2SPRE",
-      next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep())
-    }
+    { label: "Appro manquant",          next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep()) },
+    { label: "Pièce dep manquante",     next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep()) },
+    { label: "Blocage en entrée – MAG2EPRE", next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep()) },
+    { label: "Blocage en sortie – MAG2SPRE", next: fieldsStep("Identification du matériel concerné", FIELDS_DEFAULT, () => commentStep()) }
   ]
 };
 
-/* ---------------------------------------------------------
-   CONTENANT › Physique › Contenant HS › Réparation
-   --------------------------------------------------------- */
 function reparationStep() {
   return {
     id: "reparation",
@@ -574,17 +853,11 @@ function reparationStep() {
           next: commentStep()
         }
       },
-      {
-        label: "Je ne sais pas",
-        next: commentStep()
-      }
+      { label: "Je ne sais pas", next: commentStep() }
     ]
   };
 }
 
-/* ---------------------------------------------------------
-   CONTENANT › Physique
-   --------------------------------------------------------- */
 const physTree = {
   id: "phys_type",
   type: "select",
@@ -607,9 +880,6 @@ const physTree = {
   ]
 };
 
-/* ---------------------------------------------------------
-   CONTENANT › Logique / Physique
-   --------------------------------------------------------- */
 const logPhysTree = {
   id: "logphys_type",
   type: "select",
@@ -626,29 +896,11 @@ const logPhysTree = {
         options: [
           {
             label: "Trop grand",
-            next: {
-              id: "preco",
-              type: "text",
-              tag: "Préconisation",
-              question: "Quelle est la préconisation ?",
-              field: "preco",
-              placeholder: "Ex : Remplacer par modèle B-23",
-              required: false,
-              next: commentStep()
-            }
+            next: { id: "preco", type: "text", tag: "Préconisation", question: "Quelle est la préconisation ?", field: "preco", placeholder: "Ex : Remplacer par modèle B-23", required: false, next: commentStep() }
           },
           {
             label: "Trop petit",
-            next: {
-              id: "preco",
-              type: "text",
-              tag: "Préconisation",
-              question: "Quelle est la préconisation ?",
-              field: "preco",
-              placeholder: "Ex : Remplacer par modèle B-23",
-              required: false,
-              next: commentStep()
-            }
+            next: { id: "preco", type: "text", tag: "Préconisation", question: "Quelle est la préconisation ?", field: "preco", placeholder: "Ex : Remplacer par modèle B-23", required: false, next: commentStep() }
           }
         ]
       }
@@ -656,9 +908,6 @@ const logPhysTree = {
   ]
 };
 
-/* ---------------------------------------------------------
-   CONTENANT
-   --------------------------------------------------------- */
 const contenantTree = fieldsStep(
   "Identification du matériel concerné",
   FIELDS_DEFAULT,
@@ -674,9 +923,6 @@ const contenantTree = fieldsStep(
   })
 );
 
-/* ---------------------------------------------------------
-   RACINE
-   --------------------------------------------------------- */
 const ROOT = {
   id: "root",
   type: "select",
@@ -692,10 +938,10 @@ const ROOT = {
 /* ================================================================
    📦  STATE
    ================================================================ */
-let history    = [];
+let stepHistory = [];
 let currentStep = ROOT;
-let collected  = {};
-let breadcrumb = [];
+let collected   = {};
+let breadcrumb  = [];
 const ESTIMATED_MAX = 9;
 
 /* ================================================================
@@ -705,20 +951,17 @@ function render() {
   const container = document.getElementById("step-container");
   const step = currentStep;
 
-  // Progress
-  const depth = history.length;
+  const depth = stepHistory.length;
   const pct   = Math.min(Math.round((depth / ESTIMATED_MAX) * 100), 95);
   document.getElementById("progress-bar").style.width  = pct + "%";
   document.getElementById("progress-label").textContent = "Étape " + (depth + 1);
 
-  // Breadcrumb
   const bc = document.getElementById("breadcrumb");
   bc.innerHTML = breadcrumb.map((b, i) =>
     (i > 0 ? `<span class="bc-sep">›</span>` : "") +
     `<span class="bc-item">${b}</span>`
   ).join("");
 
-  // Card HTML
   let inner = `<div class="step-tag">${step.tag || ""}</div>
                <div class="step-question">${step.question}</div>`;
 
@@ -771,7 +1014,7 @@ function render() {
 }
 
 function navButtons(showBack, onNext, nextLabel = "Suivant →") {
-  const back = showBack && history.length > 0
+  const back = showBack && stepHistory.length > 0
     ? `<button class="btn btn-back" onclick="goBack()">← Retour</button>`
     : "";
   return `<div class="btn-row">${back}
@@ -790,8 +1033,7 @@ function pickOption(i) {
   const opt = currentStep.options[i];
   pushHistory();
   breadcrumb.push(opt.label);
-  collected["n" + history.length] = opt.label;   // trace le chemin
-
+  collected["n" + stepHistory.length] = opt.label;
   const next = typeof opt.next === "function" ? opt.next() : opt.next;
   currentStep = next;
   render();
@@ -828,12 +1070,8 @@ function submitTextarea() {
   collected[currentStep.field || "commentaire"] = val;
   pushHistory();
   const next = typeof currentStep.next === "function" ? currentStep.next() : currentStep.next;
-  if (next === null) {
-    renderSummary();
-  } else {
-    currentStep = next;
-    render();
-  }
+  if (next === null) { renderSummary(); }
+  else { currentStep = next; render(); }
 }
 
 function advanceStep() {
@@ -844,8 +1082,8 @@ function advanceStep() {
 }
 
 function goBack() {
-  if (!history.length) return;
-  const prev = history.pop();
+  if (!stepHistory.length) return;
+  const prev = stepHistory.pop();
   currentStep = prev.step;
   collected   = prev.collected;
   breadcrumb  = prev.breadcrumb;
@@ -853,7 +1091,7 @@ function goBack() {
 }
 
 function pushHistory() {
-  history.push({
+  stepHistory.push({
     step:       currentStep,
     collected:  JSON.parse(JSON.stringify(collected)),
     breadcrumb: [...breadcrumb]
@@ -864,12 +1102,12 @@ function pushHistory() {
    📋  RÉSUMÉ
    ================================================================ */
 const LABEL_MAP = {
-  support:    "Support",
-  kit:        "Kit",
-  engin:      "Engin",
-  commentaire:"Commentaire",
-  preco:      "Préconisation",
-  stockage_hs:"Emplacement HS"
+  support:     "Support",
+  kit:         "Kit",
+  engin:       "Engin",
+  commentaire: "Commentaire",
+  preco:       "Préconisation",
+  stockage_hs: "Emplacement HS"
 };
 
 function renderSummary() {
@@ -877,14 +1115,12 @@ function renderSummary() {
   document.getElementById("progress-bar").style.width = "100%";
   document.getElementById("progress-label").textContent = "Récapitulatif";
 
-  // Chemin sélectionné
   const path = [];
   for (let i = 1; ; i++) {
     if (collected["n" + i]) path.push(collected["n" + i]);
     else break;
   }
 
-  // Autres champs
   const extras = Object.entries(collected)
     .filter(([k]) => !k.startsWith("n"))
     .map(([k, v]) => ({ key: LABEL_MAP[k] || k, val: v || "—" }));
@@ -938,9 +1174,9 @@ function renderSummary() {
    💾  FIREBASE – ENREGISTREMENT
    ================================================================ */
 async function saveAnomaly() {
-  const btn = document.getElementById("save-btn");
+  const btn  = document.getElementById("save-btn");
   btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>Enregistrement…';
+  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:#fff4;width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px;border-radius:50%;animation:spin .7s linear infinite;border-width:2.5px"></span>Enregistrement…';
 
   const path = [];
   for (let i = 1; ; i++) {
@@ -948,17 +1184,21 @@ async function saveAnomaly() {
     else break;
   }
 
+  const user = auth.currentUser;
   const doc = {
-    chemin:    path,
-    categorie: path[0] || "",
-    support:   collected.support   || "",
-    kit:       collected.kit       || "",
-    engin:     collected.engin     || "",
+    chemin:      path,
+    categorie:   path[0] || "",
+    support:     collected.support     || "",
+    kit:         collected.kit         || "",
+    engin:       collected.engin       || "",
     commentaire: collected.commentaire || "",
-    preco:     collected.preco     || "",
+    preco:       collected.preco       || "",
     stockage_hs: collected.stockage_hs || "",
-    date:      new Date().toISOString(),
-    ts:        firebase.firestore.FieldValue.serverTimestamp()
+    date:        new Date().toISOString(),
+    ts:          firebase.firestore.FieldValue.serverTimestamp(),
+    /* Traçabilité : on enregistre qui a déclaré l'anomalie */
+    declarant_uid:   user ? user.uid   : "",
+    declarant_email: user ? user.email : ""
   };
 
   try {
@@ -968,8 +1208,7 @@ async function saveAnomaly() {
   } catch (err) {
     btn.disabled = false;
     btn.innerHTML = "✅ Enregistrer l'anomalie";
-    alert("❌ Erreur Firebase :\n" + err.message +
-          "\n\nVérifiez votre configuration firebaseConfig dans le fichier.");
+    alert("❌ Erreur Firebase :\n" + err.message);
   }
 }
 
@@ -980,7 +1219,7 @@ let historyVisible = false;
 
 function toggleHistory() {
   historyVisible = !historyVisible;
-  document.getElementById("form-view").style.display    = historyVisible ? "none" : "block";
+  document.getElementById("form-view").style.display = historyVisible ? "none" : "block";
   document.getElementById("history-view").classList.toggle("show", historyVisible);
   if (historyVisible) loadHistory();
 }
@@ -1001,11 +1240,12 @@ async function loadHistory() {
       const d  = doc.data();
       const dt = d.date ? new Date(d.date).toLocaleString("fr-FR") : "—";
       const infos = [d.support, d.kit, d.engin].filter(Boolean).join(" · ");
+      const declarant = d.declarant_email ? `<span style="opacity:.7">· ${d.declarant_email}</span>` : "";
       return `
         <div class="history-item">
           <div class="history-item-top">
             <span class="hist-badge">${d.categorie || "—"}</span>
-            <span class="hist-date">${dt}</span>
+            <span class="hist-date">${dt} ${declarant}</span>
           </div>
           <div class="hist-path">${(d.chemin || []).join(" › ")}</div>
           ${infos ? `<div class="hist-fields">${infos}</div>` : ""}
@@ -1021,18 +1261,15 @@ async function loadHistory() {
    🔄  RESET
    ================================================================ */
 function restart() {
-  history    = [];
-  currentStep = ROOT;
-  collected  = {};
-  breadcrumb = [];
+  stepHistory    = [];
+  currentStep    = ROOT;
+  collected      = {};
+  breadcrumb     = [];
   historyVisible = false;
-  document.getElementById("form-view").style.display   = "block";
+  document.getElementById("form-view").style.display = "block";
   document.getElementById("history-view").classList.remove("show");
   render();
 }
-
-/* ── INIT ── */
-render();
 </script>
 </body>
 </html>
