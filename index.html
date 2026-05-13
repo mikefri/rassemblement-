@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <title>Déclaration d'anomalie – Rassemblement kit</title>
 
   <!-- PWA Meta Tags -->
@@ -598,7 +599,12 @@
         <div class="step-question" style="font-size:17px; margin-bottom:16px;">Anomalies déclarées</div>
         <div id="history-list"><p class="empty-state" style="padding:20px 0">Chargement…</p></div>
       </div>
-      <div class="btn-row">
+      <div class="btn-<div class="btn-row" style="flex-wrap:wrap; gap:8px;">
+  <button class="btn btn-next" onclick="toggleHistory()" style="flex:1; min-width:160px">← Nouvelle déclaration</button>
+  <button class="btn btn-back" onclick="exportCSV()" style="flex:0 0 auto; background:#1d6f42; color:#fff;">⬇ CSV</button>
+  <button class="btn btn-back" onclick="exportXLSX()" style="flex:0 0 auto; background:#217346; color:#fff;">⬇ Excel</button>
+</div>
+row">
         <button class="btn btn-next" onclick="toggleHistory()">← Nouvelle déclaration</button>
       </div>
     </div>
@@ -1087,6 +1093,78 @@ function restart() {
   document.getElementById("history-view").classList.remove("show");
   render();
 }
+
+/* ── Export ── */
+async function fetchAllForExport() {
+  const snap = await db.collection("anomalies").orderBy("ts","desc").get();
+  return snap.docs.map(doc => {
+    const d = doc.data();
+    return {
+      "Date":           d.date ? new Date(d.date).toLocaleString("fr-FR") : "",
+      "Catégorie":      d.categorie      || "",
+      "Chemin complet": (d.chemin||[]).join(" › "),
+      "Support":        d.support        || "",
+      "Kit":            d.kit            || "",
+      "Engin":          d.engin          || "",
+      "Commentaire":    d.commentaire    || "",
+      "Préconisation":  d.preco          || "",
+      "Stockage HS":    d.stockage_hs    || "",
+      "Déclarant":      d.declarant_email|| "",
+    };
+  });
+}
+
+async function exportCSV() {
+  showToast("⏳ Préparation du CSV…");
+  try {
+    const rows = await fetchAllForExport();
+    if (!rows.length) { showToast("⚠ Aucune anomalie à exporter"); return; }
+    const headers = Object.keys(rows[0]);
+    const escape  = v => `"${String(v).replace(/"/g,'""')}"`;
+    const lines   = [
+      headers.map(escape).join(";"),
+      ...rows.map(r => headers.map(h => escape(r[h])).join(";"))
+    ];
+    const bom  = "\uFEFF"; // BOM UTF-8 pour Excel FR
+    const blob = new Blob([bom + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    triggerDownload(blob, "anomalies_" + dateStamp() + ".csv");
+    showToast("✅ CSV téléchargé (" + rows.length + " lignes)");
+  } catch(err) { showToast("❌ Erreur : " + err.message); }
+}
+
+async function exportXLSX() {
+  showToast("⏳ Préparation du fichier Excel…");
+  try {
+    const rows = await fetchAllForExport();
+    if (!rows.length) { showToast("⚠ Aucune anomalie à exporter"); return; }
+    const ws   = XLSX.utils.json_to_sheet(rows);
+    // Largeurs de colonnes
+    ws["!cols"] = [
+      {wch:18},{wch:18},{wch:50},{wch:16},{wch:14},{wch:14},
+      {wch:35},{wch:35},{wch:20},{wch:28}
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Anomalies");
+    XLSX.writeFile(wb, "anomalies_" + dateStamp() + ".xlsx");
+    showToast("✅ Excel téléchargé (" + rows.length + " lignes)");
+  } catch(err) { showToast("❌ Erreur : " + err.message); }
+}
+
+function triggerDownload(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a   = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function dateStamp() {
+  return new Date().toISOString().slice(0,10); // ex: 2025-05-13
+}
+
+
+  
 </script>
 
 <script>
