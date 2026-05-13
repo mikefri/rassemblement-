@@ -444,6 +444,55 @@
     }
     #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+    /* ── Modal de confirmation ── */
+    #confirm-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15, 20, 35, 0.55);
+      backdrop-filter: blur(3px);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+    }
+    #confirm-overlay.show { opacity: 1; pointer-events: all; }
+
+    #confirm-box {
+      background: var(--surface);
+      border-radius: 18px;
+      padding: 28px 24px 22px;
+      width: 100%; max-width: 360px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      transform: scale(.93) translateY(12px);
+      transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+      text-align: center;
+    }
+    #confirm-overlay.show #confirm-box { transform: scale(1) translateY(0); }
+
+    #confirm-box .confirm-icon { font-size: 36px; margin-bottom: 12px; }
+    #confirm-box h3 { font-size: 17px; font-weight: 800; color: var(--primary); margin-bottom: 8px; }
+    #confirm-box p  { font-size: 14px; color: var(--muted); line-height: 1.5; margin-bottom: 22px; }
+
+    .confirm-btns { display: flex; gap: 10px; }
+    .btn-confirm-cancel {
+      flex: 1; padding: 13px;
+      background: var(--bg); border: 1.5px solid var(--border);
+      color: var(--muted); border-radius: 11px;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      font-family: var(--font); transition: filter .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-confirm-cancel:hover { filter: brightness(.95); }
+    .btn-confirm-delete {
+      flex: 1; padding: 13px;
+      background: #dc2626; border: none;
+      color: #fff; border-radius: 11px;
+      font-size: 15px; font-weight: 700; cursor: pointer;
+      font-family: var(--font); transition: filter .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-confirm-delete:hover { filter: brightness(1.08); }
+
     /* ══════════════════════════════════════════
        RESPONSIVE — MOBILE  (≤ 480px)
     ══════════════════════════════════════════ */
@@ -982,27 +1031,40 @@ async function loadHistory() {
 }
 
 /* ── Suppression d'une anomalie ── */
-async function deleteAnomaly(docId) {
-  if (!confirm("Supprimer cette anomalie ? Cette action est irréversible.")) return;
-  const item = document.getElementById("item-" + docId);
-  if (item) item.classList.add("removing");
-  try {
-    await db.collection("anomalies").doc(docId).delete();
-    // Attendre la fin de l'animation avant de retirer l'élément du DOM
-    setTimeout(() => { if (item) item.remove(); }, 280);
-    showToast("✅ Anomalie supprimée");
-    // Si la liste est vide, afficher l'état vide
-    setTimeout(() => {
-      const list = document.getElementById("history-list");
-      if (list && list.querySelectorAll(".history-item").length === 0) {
-        list.innerHTML = "<p class='empty-state' style='padding:20px 0'>Aucune anomalie déclarée.</p>";
-      }
-    }, 350);
-  } catch(err) {
-    if (item) item.classList.remove("removing");
-    showToast("❌ Erreur : " + err.message);
-  }
+function deleteAnomaly(docId) {
+  const overlay = document.getElementById("confirm-overlay");
+  const okBtn   = document.getElementById("confirm-ok-btn");
+  // Ouvrir le modal
+  overlay.classList.add("show");
+  // Cloner le bouton pour supprimer l'ancien listener
+  const fresh = okBtn.cloneNode(true);
+  okBtn.replaceWith(fresh);
+  fresh.onclick = async () => {
+    closeConfirm();
+    const item = document.getElementById("item-" + docId);
+    if (item) item.classList.add("removing");
+    try {
+      await db.collection("anomalies").doc(docId).delete();
+      setTimeout(() => { if (item) item.remove(); }, 280);
+      showToast("✅ Anomalie supprimée");
+      setTimeout(() => {
+        const list = document.getElementById("history-list");
+        if (list && list.querySelectorAll(".history-item").length === 0)
+          list.innerHTML = "<p class='empty-state' style='padding:20px 0'>Aucune anomalie déclarée.</p>";
+      }, 350);
+    } catch(err) {
+      if (item) item.classList.remove("removing");
+      showToast("❌ Erreur : " + err.message);
+    }
+  };
 }
+function closeConfirm() {
+  document.getElementById("confirm-overlay").classList.remove("show");
+}
+// Fermer en cliquant sur le fond
+document.getElementById("confirm-overlay").addEventListener("click", e => {
+  if (e.target === document.getElementById("confirm-overlay")) closeConfirm();
+});
 
 /* ── Toast ── */
 let toastTimer = null;
@@ -1036,6 +1098,19 @@ function restart() {
     });
   }
 </script>
+<!-- Modal de confirmation suppression -->
+<div id="confirm-overlay">
+  <div id="confirm-box">
+    <div class="confirm-icon">🗑️</div>
+    <h3>Supprimer l'anomalie ?</h3>
+    <p>Cette action est irréversible.<br>L'anomalie sera définitivement supprimée.</p>
+    <div class="confirm-btns">
+      <button class="btn-confirm-cancel" onclick="closeConfirm()">Annuler</button>
+      <button class="btn-confirm-delete" id="confirm-ok-btn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 </body>
 </html>
