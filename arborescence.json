@@ -120,8 +120,8 @@
       "options": [
         { "label": "Appro manquant",              "next": "fields_default" },
         { "label": "Pièce dep manquante",         "next": "fields_default" },
-        { "label": "Blocage en entrée MAG2EPRE",  "next": "fields_default" },
-        { "label": "Blocage en sortie MAG2SPRE",  "next": "fields_default" }
+        { "label": "Support bloqué sur MAG2EPRE",  "next": "fields_default" },
+        { "label": "Support bloqué sur MAG2SPRE",  "next": "fields_default" }
       ]
     },
 
