@@ -703,6 +703,12 @@ function showApp(user) {
   const email = user.email || "";
   document.getElementById("user-avatar").textContent        = email.charAt(0).toUpperCase();
   document.getElementById("user-email-display").textContent = email;
+  // Fermer le modal en cliquant sur le fond (enregistré une seule fois)
+  const overlay = document.getElementById("confirm-overlay");
+  if (overlay && !overlay.dataset.listenerSet) {
+    overlay.addEventListener("click", e => { if (e.target === overlay) closeConfirm(); });
+    overlay.dataset.listenerSet = "1";
+  }
   restart();
 }
 document.addEventListener("keydown", e => {
@@ -718,6 +724,7 @@ let currentStepId = null; // sera initialisé dans restart(), après le chargeme
 let stepHistory   = [];
 let collected     = {};
 let breadcrumb    = [];
+let toastTimer    = null; // pour le toast de confirmation
 
 const ESTIMATED_MAX = 9; // pour la barre de progression
 
@@ -1061,13 +1068,6 @@ function deleteAnomaly(docId) {
 function closeConfirm() {
   document.getElementById("confirm-overlay").classList.remove("show");
 }
-// Fermer en cliquant sur le fond
-document.getElementById("confirm-overlay").addEventListener("click", e => {
-  if (e.target === document.getElementById("confirm-overlay")) closeConfirm();
-});
-
-/* ── Toast ── */
-let toastTimer = null;
 function showToast(msg) {
   const t = document.getElementById("toast");
   t.textContent = msg;
