@@ -674,6 +674,12 @@ function render() {
          </button>`
       ).join("")
     }</div>`;
+    // Bouton Retour (masqué sur la première étape)
+    if (stepHistory.length > 0) {
+      inner += `<div class="btn-row">
+        <button class="btn btn-back" onclick="goBack()">← Retour</button>
+      </div>`;
+    }
 
   } else if (step.type === "fields") {
     // ── Plusieurs champs texte ──
