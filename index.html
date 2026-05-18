@@ -1046,26 +1046,46 @@ function restart() {
 </script>
 
 <script>
+  /* ── Version badge : affichage immédiat depuis localStorage ── */
+  (function() {
+    const v = localStorage.getItem('app-version');
+    if (v) {
+      document.querySelectorAll('.version-badge').forEach(el => el.textContent = 'v' + v);
+    }
+  })();
+
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
 
-      // Écoute les messages du SW (reçoit la version)
+      /* Écoute la version envoyée par le SW */
       navigator.serviceWorker.addEventListener('message', event => {
         if (event.data && event.data.type === 'VERSION') {
-          // Met à jour tous les badges de version dans la page
-          document.querySelectorAll('.version-badge').forEach(el => {
-            el.textContent = 'v' + event.data.version;
-          });
-          console.log('[PWA] Version :', event.data.version);
+          const v = event.data.version;
+          /* Sauvegarde pour les prochains chargements */
+          localStorage.setItem('app-version', v);
+          /* Mise à jour du badge dans la page */
+          document.querySelectorAll('.version-badge').forEach(el => el.textContent = 'v' + v);
+          console.log('[PWA] Version active :', v);
         }
       });
 
       navigator.serviceWorker.register('./sw.js')
         .then(reg => {
           console.log('[PWA] SW enregistré :', reg.scope);
-          // Demande la version dès que le SW est actif
+          /* Demande la version dès que le SW est prêt */
           navigator.serviceWorker.ready.then(registration => {
-            registration.active.postMessage({ type: 'GET_VERSION' });
+            if (registration.active) {
+              registration.active.postMessage({ type: 'GET_VERSION' });
+            }
+          });
+          /* Si le SW vient de se mettre à jour, demande aussi la nouvelle version */
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'activated') {
+                newWorker.postMessage({ type: 'GET_VERSION' });
+              }
+            });
           });
         })
         .catch(err => console.error('[PWA] Erreur SW :', err));
