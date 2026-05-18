@@ -1248,19 +1248,22 @@ async function saveAnomaly() {
   const user = auth.currentUser;
   try {
     await db.collection("anomalies").add({
-      chemin:         path,
-      categorie:      path[0] || "",
-      support:        collected.support     || "",
-      kit:            collected.kit         || "",
-      engin:          collected.engin       || "",
-      commentaire:    collected.commentaire || "",
-      preco:          collected.preco       || "",
-      stockage_hs:    collected.stockage_hs || "",
-      date:           new Date().toISOString(),
-      ts:             firebase.firestore.FieldValue.serverTimestamp(),
-      declarant_uid:  user?.uid   || "",
-      declarant_email:user?.email || ""
+      chemin:          path,
+      categorie:       path[0] || "",
+      support:         collected.support     || "",
+      kit:             collected.kit         || "",
+      engin:           collected.engin       || "",
+      commentaire:     collected.commentaire || "",
+      preco:           collected.preco       || "",
+      stockage_hs:     collected.stockage_hs || "",
+      date:            new Date().toISOString(),
+      ts:              firebase.firestore.FieldValue.serverTimestamp(),
+      declarant_uid:   user?.uid   || "",
+      declarant_email: user?.email || "",
+      // ── Photos en base64 ──────────────────────────────
+      photos:          pendingPhotos.map(p => p.base64)   // tableau de strings base64
     });
+    pendingPhotos = [];   // on vide après sauvegarde
     document.getElementById("success-state").classList.add("show");
     btn.style.display = "none";
   } catch(err) {
@@ -1556,5 +1559,209 @@ function restart() {
 </div>
 
 <div id="toast"></div>
+<script>
+/* ════════════════════════════════════════════════════════════
+   GESTION DES PHOTOS (base64 + Firestore)
+   ════════════════════════════════════════════════════════════ */
+
+const MAX_PHOTOS   = 4;
+const MAX_PX       = 900;    // résolution max après resize
+const JPEG_QUALITY = 0.72;   // qualité JPEG (0–1)
+const WARN_SIZE_B  = 200_000; // seuil d'avertissement par photo (200 Ko)
+
+/* ── Ouvre l'input fichier ── */
+function triggerPhotoInput() {
+  document.getElementById("photo-input").value = ""; // reset pour re-sélectionner le même fichier
+  document.getElementById("photo-input").click();
+}
+
+/* ── Réception des fichiers sélectionnés ── */
+async function handlePhotoInput(event) {
+  const files = [...event.target.files];
+  if (!files.length) return;
+
+  const remaining = MAX_PHOTOS - pendingPhotos.length;
+  const toProcess = files.slice(0, remaining);
+
+  for (const file of toProcess) {
+    try {
+      const base64 = await compressToBase64(file);
+      pendingPhotos.push({ base64, size: base64.length });
+    } catch (e) {
+      showToast("❌ Erreur lecture photo : " + e.message);
+    }
+  }
+
+  if (files.length > remaining) {
+    showToast(`⚠ Maximum ${MAX_PHOTOS} photos — ${files.length - remaining} ignorée(s)`);
+  }
+
+  renderPhotoPreview();
+}
+
+/* ── Compression + conversion base64 ── */
+function compressToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Lecture impossible"));
+    reader.onload = e => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Image invalide"));
+      img.onload = () => {
+        // Calcul des nouvelles dimensions (max MAX_PX dans le grand côté)
+        let { width, height } = img;
+        if (width > MAX_PX || height > MAX_PX) {
+          if (width >= height) { height = Math.round(height * MAX_PX / width);  width = MAX_PX; }
+          else                 { width  = Math.round(width  * MAX_PX / height); height = MAX_PX; }
+        }
+
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+
+        // On encode en JPEG base64 (sans le préfixe data:…)
+        const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+        resolve(dataUrl); // on stocke le dataUrl complet pour affichage direct
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/* ── Rendu de la grille de prévisualisation ── */
+function renderPhotoPreview() {
+  const grid    = document.getElementById("photo-preview-grid");
+  const addZone = document.getElementById("photo-add-zone");
+  const warn    = document.getElementById("photo-warn");
+  if (!grid) return;
+
+  // Avertissement taille
+  const hasLarge = pendingPhotos.some(p => p.size > WARN_SIZE_B);
+  warn.classList.toggle("show", hasLarge);
+
+  // Vignettes
+  grid.innerHTML = pendingPhotos.map((p, i) => `
+    <div class="photo-thumb-wrap">
+      <img src="${p.base64}" alt="Photo ${i+1}"
+           onclick="openLightboxLocal(${i})" />
+      <button class="photo-thumb-del" onclick="removePhoto(${i})" title="Supprimer">✕</button>
+    </div>
+  `).join("");
+
+  // Zone d'ajout : masquée si max atteint
+  if (addZone) addZone.style.display = pendingPhotos.length >= MAX_PHOTOS ? "none" : "block";
+}
+
+/* ── Suppression d'une photo en attente ── */
+function removePhoto(index) {
+  pendingPhotos.splice(index, 1);
+  renderPhotoPreview();
+}
+
+/* ════════════════════════════════════════════════════════════
+   LIGHTBOX
+   ════════════════════════════════════════════════════════════ */
+let lbImages  = [];  // tableau de src (base64 ou URL)
+let lbIndex   = 0;
+
+/* Depuis la grille de prévisualisation (pendingPhotos) */
+function openLightboxLocal(i) {
+  lbImages = pendingPhotos.map(p => p.base64);
+  openLightbox(i);
+}
+
+/* Depuis l'historique (photos stockées en Firestore) */
+function openLightboxHistory(photos, i) {
+  lbImages = photos;
+  openLightbox(i);
+}
+
+function openLightbox(i) {
+  lbIndex = i;
+  updateLightboxImage();
+  document.getElementById("lightbox").classList.add("show");
+  document.body.style.overflow = "hidden";
+}
+
+function closeLightbox() {
+  document.getElementById("lightbox").classList.remove("show");
+  document.body.style.overflow = "";
+}
+
+function updateLightboxImage() {
+  document.getElementById("lightbox-img").src         = lbImages[lbIndex];
+  document.getElementById("lightbox-counter").textContent =
+    (lbIndex + 1) + " / " + lbImages.length;
+  document.getElementById("lightbox-prev").style.display = lbImages.length > 1 ? "grid" : "none";
+  document.getElementById("lightbox-next").style.display = lbImages.length > 1 ? "grid" : "none";
+}
+
+function lightboxNav(dir) {
+  lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
+  updateLightboxImage();
+}
+
+function handleLightboxClick(e) {
+  // Ferme si clic sur l'arrière-plan (pas sur l'image)
+  if (e.target === document.getElementById("lightbox")) closeLightbox();
+}
+
+// Navigation clavier
+document.addEventListener("keydown", e => {
+  if (!document.getElementById("lightbox").classList.contains("show")) return;
+  if (e.key === "ArrowRight") lightboxNav(+1);
+  if (e.key === "ArrowLeft")  lightboxNav(-1);
+  if (e.key === "Escape")     closeLightbox();
+});
+
+/* ════════════════════════════════════════════════════════════
+   AFFICHAGE DES PHOTOS DANS L'HISTORIQUE
+   ════════════════════════════════════════════════════════════ */
+
+/* Surcharge de renderHistoryItems pour inclure les vignettes */
+const _origRenderHistoryItems = renderHistoryItems;
+renderHistoryItems = function(docs, searchTerm) {
+  const list = document.getElementById("history-list");
+  if (!docs.length) {
+    list.innerHTML = "<p class='empty-state' style='padding:30px 0'>Aucun résultat pour ces filtres.</p>";
+    return;
+  }
+
+  list.innerHTML = docs.map(d => {
+    const dt      = d.date ? new Date(d.date).toLocaleString("fr-FR") : "—";
+    const dec     = d.declarant_email
+      ? `<span style="opacity:.7">· ${highlight(d.declarant_email, searchTerm)}</span>` : "";
+    const cheminHL  = (d.chemin || []).map(c => highlight(c, searchTerm)).join(" › ");
+    const infosHL   = [d.support, d.kit, d.engin].filter(Boolean)
+                        .map(v => highlight(v, searchTerm)).join(" · ");
+    const commentHL = d.commentaire ? highlight(d.commentaire, searchTerm) : "";
+
+    // Vignettes photos
+    const photos  = d.photos || [];
+    const photoEl = photos.length
+      ? `<div class="hist-photos">
+           ${photos.map((src, i) =>
+             `<img class="hist-photo-thumb" src="${src}" alt="Photo ${i+1}"
+                   onclick="openLightboxHistory(${JSON.stringify(photos).replace(/"/g,"&quot;")}, ${i})" />`
+           ).join("")}
+         </div>`
+      : "";
+
+    return `<div class="history-item" id="item-${d.id}">
+      <div class="history-item-top">
+        <span class="hist-badge">${highlight(d.categorie || "—", searchTerm)}</span>
+        <span class="hist-date">${dt} ${dec}</span>
+        <button class="btn-delete" onclick="deleteAnomaly('${d.id}')">🗑 Supprimer</button>
+      </div>
+      <div class="hist-path">${cheminHL}</div>
+      ${infosHL   ? `<div class="hist-fields">${infosHL}</div>` : ""}
+      ${commentHL ? `<div class="hist-fields" style="margin-top:4px;font-style:italic">"${commentHL}"</div>` : ""}
+      ${photoEl}
+    </div>`;
+  }).join("");
+};
+</script>
+  
 </body>
 </html>
