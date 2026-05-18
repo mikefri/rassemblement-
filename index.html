@@ -13,1085 +13,171 @@
   <link rel="apple-touch-icon" href="./icons/icon-152x152.png">
   <link rel="icon" type="image/x-icon" href="./icons/favicon.ico">
 
+  <!-- Feuille de style externe -->
+  <link rel="stylesheet" href="./style.css">
+
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+  <!-- Export Excel -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-  <style>
-    :root {
-      --bg:        #f0f2f5;
-      --surface:   #ffffff;
-      --primary:   #151c2c;
-      --accent:    #e8600a;
-      --accent-lt: #fff3eb;
-      --border:    #dde1e8;
-      --muted:     #6b7280;
-      --success-bg:#dcfce7;
-      --success:   #15803d;
-      --radius:    14px;
-      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: var(--font); background: var(--bg); min-height: 100vh; color: #111827; }
-
-    /* LOGIN */
-    #login-view { min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px 16px; background:var(--primary); }
-    .login-card { background:var(--surface); border-radius:20px; padding:36px 32px 32px; width:100%; max-width:420px; box-shadow:0 24px 60px rgba(0,0,0,0.35); animation:login-pop .35s cubic-bezier(.34,1.56,.64,1) both; }
-    @keyframes login-pop { from{opacity:0;transform:scale(.92) translateY(20px)} to{opacity:1;transform:scale(1) translateY(0)} }
-    .login-logo { width:52px; height:52px; background:var(--accent); border-radius:14px; display:grid; place-items:center; font-size:26px; margin:0 auto 20px; }
-    .version-badge { font-size:10px; font-weight:600; background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.7); padding:2px 7px; border-radius:100px; vertical-align:middle; letter-spacing:0.03em; }
-    .login-card h1 { text-align:center; font-size:20px; font-weight:800; color:var(--primary); margin-bottom:4px; letter-spacing:-.02em; }
-    .login-card .login-subtitle { text-align:center; font-size:13px; color:var(--muted); margin-bottom:28px; }
-    .login-field { margin-bottom:14px; }
-    .login-field label { display:block; font-size:12px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; margin-bottom:6px; }
-    .login-field input { width:100%; padding:13px 15px; border:1.5px solid var(--border); border-radius:10px; font-size:16px; color:#111827; background:var(--bg); outline:none; transition:border-color .15s,background .15s; font-family:var(--font); }
-    .login-field input:focus { border-color:var(--accent); background:#fff; }
-    .login-field input.error { border-color:#dc2626; background:#fff5f5; }
-    .login-error { background:#fef2f2; border:1.5px solid #fca5a5; border-radius:9px; padding:11px 14px; font-size:13px; color:#dc2626; font-weight:500; margin-bottom:14px; display:none; }
-    .login-error.show { display:block; }
-    .btn-login { width:100%; padding:15px; background:var(--accent); color:#fff; font-size:16px; font-weight:700; border:none; border-radius:11px; cursor:pointer; font-family:var(--font); transition:filter .15s,transform .1s; margin-top:6px; display:flex; align-items:center; justify-content:center; gap:8px; -webkit-tap-highlight-color:transparent; }
-    .btn-login:hover { filter:brightness(1.08); }
-    .btn-login:active { transform:scale(.98); }
-    .btn-login:disabled { opacity:.55; cursor:not-allowed; }
-    .login-footer { text-align:center; margin-top:20px; font-size:12px; color:rgba(255,255,255,0.35); }
-    .spinner { width:18px; height:18px; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; display:inline-block; flex-shrink:0; }
-    @keyframes spin { to{transform:rotate(360deg)} }
-
-    /* APP */
-    #app-view { display:none; }
-    header { background:var(--primary); color:#fff; padding:12px 16px; display:flex; align-items:center; gap:12px; position:sticky; top:0; z-index:10; }
-    .logo { width:38px; height:38px; background:var(--accent); border-radius:10px; display:grid; place-items:center; font-size:18px; flex-shrink:0; }
-    .header-titles { min-width:0; flex:1; overflow:hidden; }
-    header h1 { font-size:15px; font-weight:700; letter-spacing:-0.01em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    header p { font-size:11px; opacity:0.55; margin-top:1px; }
-    .header-right { margin-left:auto; display:flex; align-items:center; gap:6px; flex-shrink:0; }
-    .btn-header { background:rgba(255,255,255,0.12); color:#fff; border:none; border-radius:8px; padding:7px 11px; font-size:12px; cursor:pointer; font-family:var(--font); transition:background .15s; white-space:nowrap; -webkit-tap-highlight-color:transparent; }
-    .btn-header:hover { background:rgba(255,255,255,0.22); }
-    .user-chip { background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18); border-radius:100px; padding:5px 12px 5px 8px; display:flex; align-items:center; gap:7px; font-size:12px; color:rgba(255,255,255,0.75); max-width:160px; }
-    .user-avatar { width:24px; height:24px; background:var(--accent); border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:700; flex-shrink:0; color:#fff; }
-    .user-email { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-    .container { max-width:700px; margin:0 auto; padding:20px 14px 56px; }
-
-    /* PROGRESS */
-    .progress-wrap { margin-bottom:16px; }
-    .progress-track { background:var(--border); height:5px; border-radius:10px; overflow:hidden; }
-    .progress-fill { background:var(--accent); height:100%; border-radius:10px; transition:width .35s ease; }
-    .progress-label { font-size:12px; color:var(--muted); margin-top:5px; text-align:right; }
-
-    /* BREADCRUMB */
-    .breadcrumb { display:flex; flex-wrap:wrap; gap:5px; margin-bottom:14px; align-items:center; }
-    .bc-item { font-size:11px; background:var(--accent-lt); color:var(--accent); font-weight:600; padding:3px 9px; border-radius:100px; white-space:nowrap; }
-    .bc-sep { color:var(--muted); font-size:12px; }
-
-    /* CARD */
-    .card { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:20px 18px; margin-bottom:12px; animation:slide-up .2s ease; }
-    @keyframes slide-up { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    .step-tag { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin-bottom:6px; }
-    .step-question { font-size:18px; font-weight:700; color:#111827; line-height:1.3; margin-bottom:16px; }
-
-    /* OPTIONS */
-    .options { display:flex; flex-direction:column; gap:9px; }
-    .opt-btn { width:100%; text-align:left; padding:14px 16px; background:var(--surface); border:1.5px solid var(--border); border-radius:11px; font-size:15px; font-weight:500; color:#111827; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; transition:border-color .15s,background .15s,color .15s; font-family:var(--font); line-height:1.35; -webkit-tap-highlight-color:transparent; }
-    .opt-btn:hover { border-color:var(--accent); background:var(--accent-lt); color:var(--accent); }
-    .opt-btn:active { background:var(--accent-lt); border-color:var(--accent); }
-    .opt-btn .chevron { opacity:.4; font-size:20px; flex-shrink:0; }
-
-    /* FIELDS */
-    .fields { display:flex; flex-direction:column; gap:13px; }
-    .field label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:5px; }
-    .field input, .field textarea { width:100%; padding:12px 14px; border:1.5px solid var(--border); border-radius:9px; font-size:16px; color:#111827; background:var(--bg); outline:none; transition:border-color .15s,background .15s; font-family:var(--font); }
-    .field input:focus, .field textarea:focus { border-color:var(--accent); background:#fff; }
-    .field textarea { resize:vertical; min-height:100px; }
-    .field input.error { border-color:#dc2626; }
-    .info-banner { background:var(--accent-lt); border:1.5px solid var(--accent); border-radius:10px; padding:14px 16px; font-size:15px; color:#9a3e00; font-weight:500; line-height:1.5; }
-
-    /* BUTTONS */
-    .btn-row { display:flex; gap:10px; margin-top:20px; }
-    .btn { border:none; border-radius:10px; padding:14px 16px; font-size:15px; font-weight:600; cursor:pointer; transition:filter .15s,transform .1s; font-family:var(--font); -webkit-tap-highlight-color:transparent; }
-    .btn:active { transform:scale(.98); }
-    .btn-back { background:var(--border); color:var(--muted); flex:0 0 auto; }
-    .btn-back:hover { filter:brightness(.93); }
-    .btn-next { background:var(--accent); color:#fff; flex:1; }
-    .btn-next:hover { filter:brightness(1.07); }
-    .btn-submit-main { width:100%; padding:16px; background:var(--success); color:#fff; font-size:17px; font-weight:700; border-radius:12px; border:none; cursor:pointer; font-family:var(--font); transition:filter .15s; -webkit-tap-highlight-color:transparent; }
-    .btn-submit-main:hover { filter:brightness(1.07); }
-    .btn-submit-main:disabled { opacity:.5; cursor:not-allowed; }
-
-    /* SUMMARY */
-    .summary-table { border-radius:12px; overflow:hidden; border:1px solid var(--border); margin-bottom:14px; }
-    .summary-header { background:var(--primary); color:#fff; padding:13px 16px; font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
-    .summary-row { display:flex; flex-wrap:wrap; padding:11px 16px; border-bottom:1px solid var(--border); gap:4px 10px; background:var(--surface); }
-    .summary-row:last-child { border-bottom:none; }
-    .s-key { font-size:12px; color:var(--muted); font-weight:500; min-width:120px; flex-shrink:0; }
-    .s-val { font-size:13px; color:#111827; font-weight:600; word-break:break-word; }
-
-    /* SUCCESS */
-    .success-state { text-align:center; background:var(--success-bg); border:1.5px solid #86efac; border-radius:var(--radius); padding:28px 20px; display:none; }
-    .success-state.show { display:block; }
-    .success-icon { font-size:48px; margin-bottom:12px; }
-    .success-state h2 { color:var(--success); font-size:20px; margin-bottom:8px; }
-    .success-state p { color:#166534; font-size:14px; }
-    .btn-new { margin-top:16px; padding:12px 28px; background:var(--success); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; font-family:var(--font); }
-
-    /* HISTORIQUE */
-    .history-wrap { display:none; }
-    .history-wrap.show { display:block; }
-    .filter-bar { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; display:flex; flex-direction:column; gap:10px; }
-    .filter-bar-top { display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap; }
-    .filter-title { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); }
-    .filter-count { font-size:12px; font-weight:600; background:var(--accent-lt); color:var(--accent); padding:3px 10px; border-radius:100px; margin-left:auto; }
-    .btn-clear-filters { background:none; border:1.5px solid var(--border); color:var(--muted); border-radius:8px; padding:5px 11px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:border-color .15s,color .15s; white-space:nowrap; }
-    .btn-clear-filters:hover { border-color:var(--accent); color:var(--accent); }
-    .filter-row { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-    .filter-row.three { grid-template-columns:1fr 1fr 1fr; }
-    .filter-input-wrap { position:relative; }
-    .filter-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); font-size:14px; pointer-events:none; opacity:.5; }
-    .filter-input { width:100%; padding:9px 11px 9px 32px; border:1.5px solid var(--border); border-radius:9px; font-size:13px; color:#111827; background:var(--bg); outline:none; transition:border-color .15s,background .15s; font-family:var(--font); }
-    .filter-input:focus { border-color:var(--accent); background:#fff; }
-    select.filter-input { padding-left:32px; appearance:none; cursor:pointer; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:28px; }
-    input[type="date"].filter-input { padding-left:11px; }
-    .history-item { background:var(--surface); border-radius:var(--radius); border:1px solid var(--border); padding:13px 16px; margin-bottom:10px; transition:opacity .25s,transform .25s; }
-    .history-item.removing { opacity:0; transform:translateX(12px); pointer-events:none; }
-    .history-item-top { display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap; }
-    .hist-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:100px; background:var(--accent-lt); color:var(--accent); text-transform:uppercase; letter-spacing:.05em; }
-    .hist-date { font-size:11px; color:var(--muted); margin-left:auto; }
-    .hist-path { font-size:13px; font-weight:600; color:#111827; }
-    .hist-fields { font-size:12px; color:var(--muted); margin-top:3px; word-break:break-word; }
-    .empty-state { text-align:center; padding:40px 20px; color:var(--muted); }
-    mark { background:#fef08a; color:#854d0e; border-radius:3px; padding:0 2px; }
-    .btn-delete { margin-left:auto; flex-shrink:0; background:none; border:1.5px solid #fca5a5; color:#dc2626; border-radius:8px; padding:4px 10px; font-size:12px; font-weight:600; cursor:pointer; font-family:var(--font); transition:background .15s; -webkit-tap-highlight-color:transparent; }
-    .btn-delete:hover { background:#fef2f2; }
-
-    /* PHOTOS */
-    .photo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(90px,1fr)); gap:8px; margin-bottom:10px; }
-    .photo-thumb-wrap { position:relative; aspect-ratio:1; border-radius:10px; overflow:hidden; border:1.5px solid var(--border); background:var(--bg); animation:slide-up .2s ease; }
-    .photo-thumb-wrap img { width:100%; height:100%; object-fit:cover; display:block; cursor:pointer; transition:transform .2s; }
-    .photo-thumb-wrap img:hover { transform:scale(1.05); }
-    .photo-thumb-del { position:absolute; top:4px; right:4px; background:rgba(220,38,38,0.85); color:#fff; border:none; width:22px; height:22px; border-radius:50%; font-size:13px; font-weight:700; cursor:pointer; display:grid; place-items:center; line-height:1; -webkit-tap-highlight-color:transparent; }
-    .photo-size-warn { font-size:11px; color:#d97706; font-weight:500; background:#fef9c3; border:1px solid #fde68a; border-radius:8px; padding:6px 10px; margin-bottom:8px; display:none; }
-    .photo-size-warn.show { display:block; }
-    .hist-photos { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
-    .hist-photo-thumb { width:58px; height:58px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); cursor:pointer; transition:transform .15s,box-shadow .15s; }
-    .hist-photo-thumb:hover { transform:scale(1.06); box-shadow:0 4px 12px rgba(0,0,0,0.15); }
-
-    /* LIGHTBOX */
-    #lightbox { position:fixed; inset:0; background:rgba(0,0,0,0.92); z-index:2000; display:flex; align-items:center; justify-content:center; padding:16px; opacity:0; pointer-events:none; transition:opacity .2s; }
-    #lightbox.show { opacity:1; pointer-events:all; }
-    #lightbox img { max-width:100%; max-height:90vh; border-radius:10px; box-shadow:0 24px 60px rgba(0,0,0,0.5); transform:scale(.94); transition:transform .25s cubic-bezier(.34,1.56,.64,1); }
-    #lightbox.show img { transform:scale(1); }
-    #lightbox-close { position:absolute; top:16px; right:16px; background:rgba(255,255,255,0.15); border:none; color:#fff; width:40px; height:40px; border-radius:50%; font-size:20px; cursor:pointer; display:grid; place-items:center; -webkit-tap-highlight-color:transparent; transition:background .15s; }
-    #lightbox-close:hover { background:rgba(255,255,255,0.28); }
-    #lightbox-counter { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.5); color:#fff; font-size:13px; font-weight:600; padding:5px 14px; border-radius:100px; }
-    #lightbox-prev, #lightbox-next { position:absolute; top:50%; transform:translateY(-50%); background:rgba(255,255,255,0.15); border:none; color:#fff; width:42px; height:42px; border-radius:50%; font-size:20px; cursor:pointer; display:grid; place-items:center; -webkit-tap-highlight-color:transparent; transition:background .15s; }
-    #lightbox-prev:hover, #lightbox-next:hover { background:rgba(255,255,255,0.28); }
-    #lightbox-prev { left:12px; }
-    #lightbox-next { right:12px; }
-
-    /* TOAST */
-    #toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(80px); background:#1f2937; color:#fff; padding:12px 20px; border-radius:10px; font-size:14px; font-weight:500; box-shadow:0 8px 24px rgba(0,0,0,0.25); z-index:999; white-space:nowrap; transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s; opacity:0; pointer-events:none; }
-    #toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
-
-    /* MODAL CONFIRM */
-    #confirm-overlay { position:fixed; inset:0; background:rgba(15,20,35,0.55); backdrop-filter:blur(3px); z-index:1000; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .2s; }
-    #confirm-overlay.show { opacity:1; pointer-events:all; }
-    #confirm-box { background:var(--surface); border-radius:18px; padding:28px 24px 22px; width:100%; max-width:360px; box-shadow:0 24px 60px rgba(0,0,0,0.3); transform:scale(.93) translateY(12px); transition:transform .25s cubic-bezier(.34,1.56,.64,1); text-align:center; }
-    #confirm-overlay.show #confirm-box { transform:scale(1) translateY(0); }
-    #confirm-box .confirm-icon { font-size:36px; margin-bottom:12px; }
-    #confirm-box h3 { font-size:17px; font-weight:800; color:var(--primary); margin-bottom:8px; }
-    #confirm-box p { font-size:14px; color:var(--muted); line-height:1.5; margin-bottom:22px; }
-    .confirm-btns { display:flex; gap:10px; }
-    .btn-confirm-cancel { flex:1; padding:13px; background:var(--bg); border:1.5px solid var(--border); color:var(--muted); border-radius:11px; font-size:15px; font-weight:600; cursor:pointer; font-family:var(--font); transition:filter .15s; -webkit-tap-highlight-color:transparent; }
-    .btn-confirm-cancel:hover { filter:brightness(.95); }
-    .btn-confirm-delete { flex:1; padding:13px; background:#dc2626; border:none; color:#fff; border-radius:11px; font-size:15px; font-weight:700; cursor:pointer; font-family:var(--font); transition:filter .15s; -webkit-tap-highlight-color:transparent; }
-    .btn-confirm-delete:hover { filter:brightness(1.08); }
-
-    /* RESPONSIVE */
-    @media (max-width:480px) {
-      header { padding:10px 12px; gap:10px; }
-      header p { display:none; }
-      header h1 { font-size:14px; }
-      .user-chip { padding:5px; max-width:none; border-radius:50%; width:32px; height:32px; justify-content:center; }
-      .user-email { display:none; }
-      .btn-header { padding:6px 9px; font-size:11px; }
-      .login-card { padding:24px 18px 20px; border-radius:16px; }
-      .login-card h1 { font-size:18px; }
-      .container { padding:14px 10px 72px; }
-      .card { padding:16px 14px; border-radius:12px; }
-      .step-question { font-size:16px; }
-      .opt-btn { font-size:14px; padding:15px 14px; border-radius:10px; }
-      .btn-row { flex-direction:column; gap:8px; }
-      .btn-back { order:2; text-align:center; }
-      .btn-next { order:1; padding:15px; }
-      .summary-row { flex-direction:column; gap:2px; padding:10px 14px; }
-      .s-key { min-width:unset; font-size:11px; }
-      .s-val { font-size:14px; }
-      .btn-submit-main { font-size:16px; }
-      .filter-row { grid-template-columns:1fr; }
-      .filter-row.three { grid-template-columns:1fr 1fr; }
-    }
-    @media (min-width:481px) and (max-width:768px) {
-      .user-chip { max-width:130px; }
-      header h1 { font-size:15px; }
-      .login-card { padding:32px 28px 28px; }
-      .step-question { font-size:17px; }
-      .container { padding:18px 16px 60px; }
-      .btn-row { flex-direction:row; }
-    }
-    @media (min-width:769px) {
-      header { padding:14px 24px; gap:14px; }
-      header h1 { font-size:17px; }
-      header p { display:block; }
-      .logo { width:40px; height:40px; font-size:20px; }
-      .container { padding:24px 20px 56px; }
-      .card { padding:24px 22px; }
-      .step-question { font-size:19px; }
-      .opt-btn { font-size:16px; padding:15px 18px; }
-      .btn-row { flex-direction:row; }
-    }
-  </style>
 </head>
 <body>
 
-<!-- LOGIN -->
-<div id="login-view">
-  <div class="login-card">
-    <div class="login-logo">⚠</div>
-    <h1>Déclaration d'anomalie</h1>
-    <p class="login-subtitle">Rassemblement de kit · Connexion requise</p>
-    <div class="login-error" id="login-error"></div>
-    <div class="login-field">
-      <label>Adresse e-mail</label>
-      <input type="email" id="login-email" placeholder="prenom.nom@entreprise.fr" autocomplete="username" />
-    </div>
-    <div class="login-field">
-      <label>Mot de passe</label>
-      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
-    </div>
-    <button class="btn-login" id="login-btn" onclick="doLogin()">Se connecter</button>
-  </div>
-  <p class="login-footer">Accès réservé au personnel autorisé</p>
-</div>
-
-<!-- APP -->
-<div id="app-view">
-  <header>
-    <div class="logo">
-      <img src="./icons/icon-32x32.png" alt="Logo" style="width:24px;height:24px;">
-    </div>
-    <div class="header-titles">
+  <!-- ══════════════════════════════════════════
+       LOGIN
+  ══════════════════════════════════════════ -->
+  <div id="login-view">
+    <div class="login-card">
+      <div class="login-logo">⚠</div>
       <h1>Déclaration d'anomalie</h1>
-      <p>Rassemblement de kit <span class="version-badge">v…</span></p>
-    </div>
-    <div class="header-right">
-      <div class="user-chip" id="user-chip">
-        <div class="user-avatar" id="user-avatar">?</div>
-        <span class="user-email" id="user-email-display">—</span>
+      <p class="login-subtitle">Rassemblement de kit · Connexion requise</p>
+      <div class="login-error" id="login-error"></div>
+      <div class="login-field">
+        <label>Adresse e-mail</label>
+        <input type="email" id="login-email"
+               placeholder="prenom.nom@entreprise.fr"
+               autocomplete="username" />
       </div>
-      <button class="btn-header" onclick="toggleHistory()">📋 Historique</button>
-      <button class="btn-header" onclick="doLogout()">🔓 Déco.</button>
+      <div class="login-field">
+        <label>Mot de passe</label>
+        <input type="password" id="login-password"
+               placeholder="••••••••"
+               autocomplete="current-password" />
+      </div>
+      <button class="btn-login" id="login-btn" onclick="doLogin()">
+        Se connecter
+      </button>
     </div>
-  </header>
+    <p class="login-footer">Accès réservé au personnel autorisé</p>
+  </div>
 
-  <div class="container">
-    <div id="form-view">
-      <div class="progress-wrap">
-        <div class="progress-track"><div class="progress-fill" id="progress-bar" style="width:0%"></div></div>
-        <div class="progress-label" id="progress-label">Étape 1</div>
-      </div>
-      <div class="breadcrumb" id="breadcrumb"></div>
-      <div id="step-container"></div>
-    </div>
+  <!-- ══════════════════════════════════════════
+       APPLICATION
+  ══════════════════════════════════════════ -->
+  <div id="app-view">
 
-    <div class="history-wrap" id="history-view">
-      <div class="filter-bar">
-        <div class="filter-bar-top">
-          <span class="filter-title">🔍 Filtres</span>
-          <span class="filter-count" id="filter-count">— entrées</span>
-          <button class="btn-clear-filters" onclick="clearFilters()">✕ Réinitialiser</button>
+    <header>
+      <div class="logo">
+        <img src="./icons/icon-32x32.png" alt="Logo" style="width:24px;height:24px;">
+      </div>
+      <div class="header-titles">
+        <h1>Déclaration d'anomalie</h1>
+        <p>Rassemblement de kit <span class="version-badge">v…</span></p>
+      </div>
+      <div class="header-right">
+        <div class="user-chip" id="user-chip">
+          <div class="user-avatar" id="user-avatar">?</div>
+          <span class="user-email" id="user-email-display">—</span>
         </div>
-        <div class="filter-row">
-          <div class="filter-input-wrap">
-            <span class="filter-icon">🔍</span>
-            <input class="filter-input" id="f-search" type="text" placeholder="Recherche libre…" oninput="applyFilters()" />
+        <button class="btn-header" onclick="toggleHistory()">📋 Historique</button>
+        <button class="btn-header" onclick="doLogout()">🔓 Déco.</button>
+      </div>
+    </header>
+
+    <div class="container">
+
+      <!-- Formulaire -->
+      <div id="form-view">
+        <div class="progress-wrap">
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-bar" style="width:0%"></div>
           </div>
-          <div class="filter-input-wrap">
-            <span class="filter-icon">🏷</span>
-            <select class="filter-input" id="f-categorie" onchange="applyFilters()">
-              <option value="">Toutes catégories</option>
-            </select>
+          <div class="progress-label" id="progress-label">Étape 1</div>
+        </div>
+        <div class="breadcrumb" id="breadcrumb"></div>
+        <div id="step-container"></div>
+      </div>
+
+      <!-- Historique -->
+      <div class="history-wrap" id="history-view">
+        <div class="filter-bar">
+          <div class="filter-bar-top">
+            <span class="filter-title">🔍 Filtres</span>
+            <span class="filter-count" id="filter-count">— entrées</span>
+            <button class="btn-clear-filters" onclick="clearFilters()">✕ Réinitialiser</button>
+          </div>
+          <div class="filter-row">
+            <div class="filter-input-wrap">
+              <span class="filter-icon">🔍</span>
+              <input class="filter-input" id="f-search" type="text"
+                     placeholder="Recherche libre…" oninput="applyFilters()" />
+            </div>
+            <div class="filter-input-wrap">
+              <span class="filter-icon">🏷</span>
+              <select class="filter-input" id="f-categorie" onchange="applyFilters()">
+                <option value="">Toutes catégories</option>
+              </select>
+            </div>
+          </div>
+          <div class="filter-row three">
+            <div class="filter-input-wrap">
+              <input class="filter-input" id="f-date-from" type="date"
+                     title="Du" onchange="applyFilters()" />
+            </div>
+            <div class="filter-input-wrap">
+              <input class="filter-input" id="f-date-to" type="date"
+                     title="Au" onchange="applyFilters()" />
+            </div>
+            <div class="filter-input-wrap">
+              <span class="filter-icon">👤</span>
+              <input class="filter-input" id="f-declarant" type="text"
+                     placeholder="Déclarant…" oninput="applyFilters()" />
+            </div>
           </div>
         </div>
-        <div class="filter-row three">
-          <div class="filter-input-wrap">
-            <input class="filter-input" id="f-date-from" type="date" title="Du" onchange="applyFilters()" />
-          </div>
-          <div class="filter-input-wrap">
-            <input class="filter-input" id="f-date-to" type="date" title="Au" onchange="applyFilters()" />
-          </div>
-          <div class="filter-input-wrap">
-            <span class="filter-icon">👤</span>
-            <input class="filter-input" id="f-declarant" type="text" placeholder="Déclarant…" oninput="applyFilters()" />
-          </div>
+
+        <div class="card" style="padding:0;overflow:hidden;border:none;background:transparent;box-shadow:none;">
+          <div id="history-list"></div>
+        </div>
+
+        <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
+          <button class="btn btn-next" onclick="toggleHistory()"
+                  style="flex:1;min-width:160px">← Nouvelle déclaration</button>
+          <button class="btn btn-back" onclick="exportCSV()"
+                  style="flex:0 0 auto;background:#1d6f42;color:#fff;border:none;">⬇ CSV</button>
+          <button class="btn btn-back" onclick="exportXLSX()"
+                  style="flex:0 0 auto;background:#217346;color:#fff;border:none;">⬇ Excel</button>
         </div>
       </div>
-      <div class="card" style="padding:0;overflow:hidden;border:none;background:transparent;box-shadow:none;">
-        <div id="history-list"></div>
-      </div>
-      <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
-        <button class="btn btn-next" onclick="toggleHistory()" style="flex:1;min-width:160px">← Nouvelle déclaration</button>
-        <button class="btn btn-back" onclick="exportCSV()" style="flex:0 0 auto;background:#1d6f42;color:#fff;border:none;">⬇ CSV</button>
-        <button class="btn btn-back" onclick="exportXLSX()" style="flex:0 0 auto;background:#217346;color:#fff;border:none;">⬇ Excel</button>
+
+    </div><!-- /container -->
+  </div><!-- /app-view -->
+
+  <!-- Input photo (caché, important pour mobile) -->
+  <input type="file" id="photo-input" accept="image/*" multiple
+         style="position:fixed;opacity:0;width:1px;height:1px;top:-200px;left:-200px;pointer-events:none;"
+         onchange="handlePhotoInput(event)" />
+
+  <!-- Lightbox -->
+  <div id="lightbox" onclick="handleLightboxClick(event)">
+    <button id="lightbox-close" onclick="closeLightbox()">✕</button>
+    <button id="lightbox-prev" onclick="lightboxNav(-1)">‹</button>
+    <img id="lightbox-img" src="" alt="Photo anomalie" />
+    <button id="lightbox-next" onclick="lightboxNav(+1)">›</button>
+    <div id="lightbox-counter"></div>
+  </div>
+
+  <!-- Modal suppression -->
+  <div id="confirm-overlay">
+    <div id="confirm-box">
+      <div class="confirm-icon">🗑️</div>
+      <h3>Supprimer l'anomalie ?</h3>
+      <p>Cette action est irréversible.<br>L'anomalie sera définitivement supprimée.</p>
+      <div class="confirm-btns">
+        <button class="btn-confirm-cancel" onclick="closeConfirm()">Annuler</button>
+        <button class="btn-confirm-delete" id="confirm-ok-btn">Supprimer</button>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Input photo — caché mais pas display:none (important pour mobile) -->
-<input type="file" id="photo-input" accept="image/*" multiple
-       style="position:fixed;opacity:0;width:1px;height:1px;top:-200px;left:-200px;pointer-events:none;"
-       onchange="handlePhotoInput(event)" />
+  <!-- Toast -->
+  <div id="toast"></div>
 
-<!-- Lightbox -->
-<div id="lightbox" onclick="handleLightboxClick(event)">
-  <button id="lightbox-close" onclick="closeLightbox()">✕</button>
-  <button id="lightbox-prev" onclick="lightboxNav(-1)">‹</button>
-  <img id="lightbox-img" src="" alt="Photo anomalie" />
-  <button id="lightbox-next" onclick="lightboxNav(+1)">›</button>
-  <div id="lightbox-counter"></div>
-</div>
-
-<!-- Modal suppression -->
-<div id="confirm-overlay">
-  <div id="confirm-box">
-    <div class="confirm-icon">🗑️</div>
-    <h3>Supprimer l'anomalie ?</h3>
-    <p>Cette action est irréversible.<br>L'anomalie sera définitivement supprimée.</p>
-    <div class="confirm-btns">
-      <button class="btn-confirm-cancel" onclick="closeConfirm()">Annuler</button>
-      <button class="btn-confirm-delete" id="confirm-ok-btn">Supprimer</button>
-    </div>
-  </div>
-</div>
-
-<div id="toast"></div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     SCRIPT UNIQUE — tout est ici, aucune constante dupliquée
-     ═══════════════════════════════════════════════════════════ -->
-<script>
-
-/* ── Constantes globales (déclarées UNE SEULE FOIS) ── */
-const MAX_PHOTOS   = 4;
-const MAX_PX       = 900;
-const JPEG_QUALITY = 0.72;
-const WARN_SIZE_B  = 200000; // 200 Ko
-
-/* ── Firebase ── */
-const firebaseConfig = {
-  apiKey: "AIzaSyARI0sADSyvYcTwaSlK0TpvLY0uwL2BlRw",
-  authDomain: "rassemblement-b7927.firebaseapp.com",
-  projectId: "rassemblement-b7927",
-  storageBucket: "rassemblement-b7927.firebasestorage.app",
-  messagingSenderId: "127334162906",
-  appId: "1:127334162906:web:92c2e6281c93df6eab20e3"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(), auth = firebase.auth();
-
-/* ── Chargement tree.json ── */
-let TREE = null;
-fetch('./tree.json')
-  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-  .then(data => { TREE = data; auth.onAuthStateChanged(u => u ? showApp(u) : showLogin()); })
-  .catch(err => {
-    document.body.innerHTML = `<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#151c2c;font-family:system-ui;text-align:center;padding:24px"><div style="background:#fff;border-radius:16px;padding:32px;max-width:400px"><div style="font-size:40px;margin-bottom:12px">⚠️</div><h2 style="color:#151c2c;margin-bottom:8px">Impossible de charger tree.json</h2><p style="color:#6b7280;font-size:14px">Vérifiez que <strong>tree.json</strong> est dans le même dossier que index.html.</p><p style="color:#dc2626;font-size:12px;margin-top:12px">${err.message}</p></div></div>`;
-  });
-
-/* ── Auth ── */
-async function doLogin() {
-  const email = document.getElementById("login-email").value.trim();
-  const pass  = document.getElementById("login-password").value;
-  const btn   = document.getElementById("login-btn");
-  document.getElementById("login-error").classList.remove("show");
-  ["login-email","login-password"].forEach(id => document.getElementById(id).classList.remove("error"));
-  if (!email || !pass) {
-    showLoginError("Veuillez remplir tous les champs.");
-    if (!email) document.getElementById("login-email").classList.add("error");
-    if (!pass)  document.getElementById("login-password").classList.add("error");
-    return;
-  }
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>&nbsp;Connexion…';
-  try {
-    await auth.signInWithEmailAndPassword(email, pass);
-  } catch(err) {
-    btn.disabled = false; btn.innerHTML = "Se connecter";
-    const msgs = {
-      "auth/user-not-found":       "Aucun compte trouvé pour cet e-mail.",
-      "auth/wrong-password":       "Mot de passe incorrect.",
-      "auth/invalid-email":        "Adresse e-mail invalide.",
-      "auth/too-many-requests":    "Trop de tentatives. Réessayez dans quelques minutes.",
-      "auth/invalid-credential":   "Identifiants incorrects. Vérifiez votre e-mail et mot de passe.",
-      "auth/network-request-failed":"Erreur réseau. Vérifiez votre connexion."
-    };
-    showLoginError(msgs[err.code] || "Erreur : " + err.message);
-  }
-}
-function showLoginError(msg) {
-  const b = document.getElementById("login-error");
-  b.textContent = "⚠ " + msg; b.classList.add("show");
-}
-async function doLogout() {
-  if (!confirm("Se déconnecter ?")) return;
-  await auth.signOut();
-}
-function showLogin() {
-  document.getElementById("login-view").style.display = "flex";
-  document.getElementById("app-view").style.display   = "none";
-  document.getElementById("login-email").value    = "";
-  document.getElementById("login-password").value = "";
-  document.getElementById("login-error").classList.remove("show");
-  const btn = document.getElementById("login-btn");
-  btn.disabled = false; btn.innerHTML = "Se connecter";
-}
-function showApp(user) {
-  document.getElementById("login-view").style.display = "none";
-  document.getElementById("app-view").style.display   = "block";
-  const email = user.email || "";
-  document.getElementById("user-avatar").textContent        = email.charAt(0).toUpperCase();
-  document.getElementById("user-email-display").textContent = email;
-  const overlay = document.getElementById("confirm-overlay");
-  if (overlay && !overlay.dataset.listenerSet) {
-    overlay.addEventListener("click", e => { if (e.target === overlay) closeConfirm(); });
-    overlay.dataset.listenerSet = "1";
-  }
-  restart();
-}
-document.addEventListener("keydown", e => {
-  if (e.key === "Enter" && document.getElementById("login-view").style.display !== "none") doLogin();
-});
-
-/* ── État navigation ── */
-let currentStepId = null;
-let stepHistory   = [];
-let collected     = {};
-let breadcrumb    = [];
-let toastTimer    = null;
-let pendingPhotos = []; // [{ base64, size }]
-const ESTIMATED_MAX = 9;
-
-/* ── Rendu principal ── */
-function render() {
-  const step = TREE.nodes[currentStepId];
-  const pct  = Math.min(Math.round((stepHistory.length / ESTIMATED_MAX) * 100), 95);
-  document.getElementById("progress-bar").style.width   = pct + "%";
-  document.getElementById("progress-label").textContent = "Étape " + (stepHistory.length + 1);
-  document.getElementById("breadcrumb").innerHTML = breadcrumb.map((b, i) =>
-    (i > 0 ? '<span class="bc-sep">›</span>' : '') + `<span class="bc-item">${b}</span>`
-  ).join("");
-
-  let inner = `<div class="step-tag">${step.tag || ""}</div><div class="step-question">${step.question}</div>`;
-
-  if (step.type === "select") {
-    inner += `<div class="options">${step.options.map((o, i) =>
-      `<button class="opt-btn" onclick="pickOption(${i})"><span>${o.label}</span><span class="chevron">›</span></button>`
-    ).join("")}</div>`;
-    if (stepHistory.length > 0)
-      inner += `<div class="btn-row"><button class="btn btn-back" onclick="goBack()">← Retour</button></div>`;
-  } else if (step.type === "fields") {
-    inner += `<div class="fields">${step.fields.map(f =>
-      `<div class="field"><label>${f.label}</label>
-       <input id="f_${f.key}" placeholder="${f.placeholder}" value="${esc(collected[f.key] || "")}" /></div>`
-    ).join("")}</div>` + navButtons("submitFields()");
-  } else if (step.type === "text") {
-    inner += `<div class="fields"><div class="field">
-      <input id="txt_field" placeholder="${step.placeholder}" value="${esc(collected[step.field] || "")}" />
-    </div></div>` + navButtons("submitText()");
-  } else if (step.type === "textarea") {
-    const isLast = step.next === null;
-    inner += `<div class="fields"><div class="field">
-      <textarea id="ta_field" placeholder="${step.placeholder}">${esc(collected[step.field || "commentaire"] || "")}</textarea>
-    </div></div>` + navButtons("submitTextarea()", isLast ? "📋 Voir le récapitulatif" : "Suivant →");
-  } else if (step.type === "info") {
-    inner += `<div class="info-banner">${step.message}</div>` + navButtons("advanceStep()");
-  }
-
-  document.getElementById("step-container").innerHTML = `<div class="card">${inner}</div>`;
-}
-
-function navButtons(onNext, nextLabel = "Suivant →") {
-  const back = stepHistory.length > 0 ? `<button class="btn btn-back" onclick="goBack()">← Retour</button>` : "";
-  return `<div class="btn-row">${back}<button class="btn btn-next" onclick="${onNext}">${nextLabel}</button></div>`;
-}
-function esc(s) { return String(s).replace(/"/g,"&quot;").replace(/</g,"&lt;"); }
-
-/* ── Navigation ── */
-function pickOption(i) {
-  const step = TREE.nodes[currentStepId];
-  const opt  = step.options[i];
-  pushHistory();
-  breadcrumb.push(opt.label);
-  collected["n" + stepHistory.length] = opt.label;
-  currentStepId = opt.next;
-  render();
-}
-function submitFields() {
-  const step = TREE.nodes[currentStepId];
-  let ok = true;
-  step.fields.forEach(f => {
-    const el  = document.getElementById("f_" + f.key);
-    const val = el.value.trim();
-    if (f.required && !val) { el.classList.add("error"); ok = false; }
-    else { el.classList.remove("error"); collected[f.key] = val; }
-  });
-  if (!ok) { alert("❗ Veuillez remplir tous les champs obligatoires (*)"); return; }
-  pushHistory(); currentStepId = step.next; render();
-}
-function submitText() {
-  const step = TREE.nodes[currentStepId];
-  const val  = document.getElementById("txt_field").value.trim();
-  if (step.required && !val) { alert("❗ Ce champ est obligatoire."); return; }
-  collected[step.field] = val;
-  pushHistory(); currentStepId = step.next; render();
-}
-function submitTextarea() {
-  const step = TREE.nodes[currentStepId];
-  collected[step.field || "commentaire"] = document.getElementById("ta_field").value.trim();
-  pushHistory();
-  if (step.next === null) renderSummary();
-  else { currentStepId = step.next; render(); }
-}
-function advanceStep() {
-  const step = TREE.nodes[currentStepId];
-  pushHistory(); currentStepId = step.next; render();
-}
-function goBack() {
-  if (!stepHistory.length) return;
-  const prev = stepHistory.pop();
-  currentStepId = prev.stepId; collected = prev.collected; breadcrumb = prev.breadcrumb;
-  render();
-}
-function pushHistory() {
-  stepHistory.push({ stepId: currentStepId, collected: JSON.parse(JSON.stringify(collected)), breadcrumb: [...breadcrumb] });
-}
-
-/* ── Label map ── */
-const LABEL_MAP = { support:"Support", kit:"Kit", engin:"Engin", commentaire:"Commentaire", preco:"Préconisation", stockage_hs:"Emplacement HS" };
-
-/* ═══════════════════════════════════════════
-   RÉCAPITULATIF
-   ═══════════════════════════════════════════ */
-function renderSummary() {
-  document.getElementById("progress-bar").style.width   = "100%";
-  document.getElementById("progress-label").textContent = "Récapitulatif";
-
-  const path = [];
-  for (let i = 1; ; i++) { if (collected["n" + i]) path.push(collected["n" + i]); else break; }
-  const extras = Object.entries(collected).filter(([k]) => !k.startsWith("n")).map(([k,v]) => ({ key: LABEL_MAP[k]||k, val: v||"—" }));
-
-  document.getElementById("step-container").innerHTML = `
-    <div class="card" style="margin-bottom:14px">
-      <div class="step-tag">Récapitulatif</div>
-      <div class="step-question" style="font-size:17px">Vérifiez avant d'enregistrer</div>
-    </div>
-
-    <div class="summary-table">
-      <div class="summary-header">📋 Chemin d'anomalie</div>
-      ${path.map((p,i) => `<div class="summary-row"><span class="s-key">Niveau ${i+1}</span><span class="s-val">${p}</span></div>`).join("")}
-    </div>
-
-    ${extras.length ? `<div class="summary-table">
-      <div class="summary-header">📝 Données saisies</div>
-      ${extras.map(e => `<div class="summary-row"><span class="s-key">${e.key}</span><span class="s-val">${e.val}</span></div>`).join("")}
-    </div>` : ""}
-
-    <div class="summary-table" style="margin-bottom:14px">
-      <div class="summary-header">📷 Photos (optionnel · max ${MAX_PHOTOS})</div>
-      <div style="padding:14px 16px">
-        <div class="photo-size-warn" id="photo-warn">⚠ Une ou plusieurs photos dépassent 200 Ko après compression.</div>
-        <div class="photo-grid" id="photo-preview-grid"></div>
-
-        <div id="photo-add-zone" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;">
-          <button class="btn btn-next"
-                  style="flex:1;min-width:140px;font-size:14px;padding:13px 10px;"
-                  onclick="triggerPhotoCamera()">
-            📷 Prendre une photo
-          </button>
-          <button class="btn btn-back"
-                  style="flex:1;min-width:140px;font-size:14px;padding:13px 10px;background:#e5e7eb;color:#111827;"
-                  onclick="triggerPhotoGallery()">
-            🖼 Depuis la galerie
-          </button>
-        </div>
-
-        <div id="photo-counter" style="font-size:12px;color:var(--muted);margin-top:8px;text-align:right;">
-          0 / ${MAX_PHOTOS} photo
-        </div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
-      <button class="btn btn-back" style="flex:0 0 auto;" onclick="restart()">↺ Recommencer</button>
-      <button class="btn-submit-main" id="save-btn" onclick="saveAnomaly()" style="flex:1;min-width:180px;">✅ Enregistrer l'anomalie</button>
-    </div>
-
-    <div class="success-state" id="success-state">
-      <div class="success-icon">✅</div>
-      <h2>Anomalie enregistrée !</h2>
-      <p>La déclaration a été sauvegardée avec succès.</p>
-      <button class="btn-new" onclick="restart()">+ Nouvelle déclaration</button>
-    </div>
-  `;
-
-  renderPhotoPreview();
-}
-
-/* ═══════════════════════════════════════════
-   PHOTOS
-   ═══════════════════════════════════════════ */
-
-/* Caméra arrière (mobile) — sur PC ouvre simplement l'explorateur de fichiers */
-function triggerPhotoCamera() {
-  const input = document.getElementById("photo-input");
-  input.removeAttribute("capture");
-  input.setAttribute("capture", "environment");
-  input.value = "";
-  input.click();
-}
-
-/* Galerie / explorateur de fichiers */
-function triggerPhotoGallery() {
-  const input = document.getElementById("photo-input");
-  input.removeAttribute("capture");
-  input.value = "";
-  input.click();
-}
-
-/* Réception des fichiers */
-async function handlePhotoInput(event) {
-  const files     = Array.from(event.target.files);
-  if (!files.length) return;
-  const remaining = MAX_PHOTOS - pendingPhotos.length;
-  const toProcess = files.slice(0, remaining);
-
-  for (const file of toProcess) {
-    try {
-      const base64 = await compressToBase64(file);
-      pendingPhotos.push({ base64: base64, size: base64.length });
-    } catch(e) {
-      showToast("❌ Erreur photo : " + e.message);
-    }
-  }
-  if (files.length > remaining)
-    showToast("⚠ Max " + MAX_PHOTOS + " photos — " + (files.length - remaining) + " ignorée(s)");
-
-  renderPhotoPreview();
-}
-
-/* Compression canvas → JPEG base64 */
-function compressToBase64(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onerror = function() { reject(new Error("Lecture impossible")); };
-    reader.onload = function(e) {
-      var img = new Image();
-      img.onerror = function() { reject(new Error("Image invalide")); };
-      img.onload = function() {
-        var w = img.width, h = img.height;
-        if (w > MAX_PX || h > MAX_PX) {
-          if (w >= h) { h = Math.round(h * MAX_PX / w); w = MAX_PX; }
-          else        { w = Math.round(w * MAX_PX / h); h = MAX_PX; }
-        }
-        var canvas = document.createElement("canvas");
-        canvas.width = w; canvas.height = h;
-        canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", JPEG_QUALITY));
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-/* Grille de prévisualisation */
-function renderPhotoPreview() {
-  var grid    = document.getElementById("photo-preview-grid");
-  var addZone = document.getElementById("photo-add-zone");
-  var warn    = document.getElementById("photo-warn");
-  var counter = document.getElementById("photo-counter");
-  if (!grid) return;
-
-  var hasLarge = pendingPhotos.some(function(p) { return p.size > WARN_SIZE_B; });
-  if (hasLarge) warn.classList.add("show"); else warn.classList.remove("show");
-
-  grid.innerHTML = pendingPhotos.map(function(p, i) {
-    return '<div class="photo-thumb-wrap">' +
-           '<img src="' + p.base64 + '" alt="Photo ' + (i+1) + '" onclick="openLightboxLocal(' + i + ')" />' +
-           '<button class="photo-thumb-del" onclick="removePhoto(' + i + ')">✕</button>' +
-           '</div>';
-  }).join("");
-
-  if (addZone) addZone.style.display = pendingPhotos.length >= MAX_PHOTOS ? "none" : "flex";
-  if (counter) {
-    var n = pendingPhotos.length;
-    counter.textContent = n + " / " + MAX_PHOTOS + " photo" + (n > 1 ? "s" : "");
-  }
-}
-
-function removePhoto(index) {
-  pendingPhotos.splice(index, 1);
-  renderPhotoPreview();
-}
-
-/* ═══════════════════════════════════════════
-   LIGHTBOX
-   ═══════════════════════════════════════════ */
-var lbImages = [];
-var lbIndex  = 0;
-
-function openLightboxLocal(i)           { lbImages = pendingPhotos.map(function(p){ return p.base64; }); openLightbox(i); }
-function openLightboxHistory(photos, i) { lbImages = photos; openLightbox(i); }
-
-function openLightbox(i) {
-  lbIndex = i;
-  updateLightboxImage();
-  document.getElementById("lightbox").classList.add("show");
-  document.body.style.overflow = "hidden";
-}
-function closeLightbox() {
-  document.getElementById("lightbox").classList.remove("show");
-  document.body.style.overflow = "";
-}
-function updateLightboxImage() {
-  document.getElementById("lightbox-img").src = lbImages[lbIndex];
-  document.getElementById("lightbox-counter").textContent = (lbIndex + 1) + " / " + lbImages.length;
-  document.getElementById("lightbox-prev").style.display = lbImages.length > 1 ? "grid" : "none";
-  document.getElementById("lightbox-next").style.display = lbImages.length > 1 ? "grid" : "none";
-}
-function lightboxNav(dir) {
-  lbIndex = (lbIndex + dir + lbImages.length) % lbImages.length;
-  updateLightboxImage();
-}
-function handleLightboxClick(e) {
-  if (e.target === document.getElementById("lightbox")) closeLightbox();
-}
-document.addEventListener("keydown", function(e) {
-  if (!document.getElementById("lightbox").classList.contains("show")) return;
-  if (e.key === "ArrowRight") lightboxNav(+1);
-  if (e.key === "ArrowLeft")  lightboxNav(-1);
-  if (e.key === "Escape")     closeLightbox();
-});
-
-/* ═══════════════════════════════════════════
-   SAUVEGARDE FIREBASE
-   ═══════════════════════════════════════════ */
-async function saveAnomaly() {
-  var btn = document.getElementById("save-btn");
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner" style="border-top-color:#fff;border-color:#fff4;width:18px;height:18px;display:inline-block;vertical-align:middle;margin-right:8px;border-radius:50%;animation:spin .7s linear infinite;border-width:2.5px;flex-shrink:0"></span>Enregistrement…';
-
-  var path = [];
-  for (var i = 1; ; i++) { if (collected["n" + i]) path.push(collected["n" + i]); else break; }
-
-  var user = auth.currentUser;
-  try {
-    await db.collection("anomalies").add({
-      chemin:          path,
-      categorie:       path[0] || "",
-      support:         collected.support     || "",
-      kit:             collected.kit         || "",
-      engin:           collected.engin       || "",
-      commentaire:     collected.commentaire || "",
-      preco:           collected.preco       || "",
-      stockage_hs:     collected.stockage_hs || "",
-      date:            new Date().toISOString(),
-      ts:              firebase.firestore.FieldValue.serverTimestamp(),
-      declarant_uid:   user ? user.uid   : "",
-      declarant_email: user ? user.email : "",
-      photos:          pendingPhotos.map(function(p){ return p.base64; })
-    });
-    pendingPhotos = [];
-    document.getElementById("success-state").classList.add("show");
-    btn.style.display = "none";
-  } catch(err) {
-    btn.disabled = false;
-    btn.innerHTML = "✅ Enregistrer l'anomalie";
-    alert("❌ Erreur Firebase :\n" + err.message);
-  }
-}
-
-/* ═══════════════════════════════════════════
-   HISTORIQUE
-   ═══════════════════════════════════════════ */
-var historyVisible = false;
-var allDocs        = [];
-
-function toggleHistory() {
-  historyVisible = !historyVisible;
-  document.getElementById("form-view").style.display = historyVisible ? "none" : "block";
-  document.getElementById("history-view").classList.toggle("show", historyVisible);
-  if (historyVisible) loadHistory();
-}
-async function loadHistory() {
-  var list = document.getElementById("history-list");
-  list.innerHTML = "<p class='empty-state' style='padding:20px 0'>Chargement…</p>";
-  try {
-    var snap = await db.collection("anomalies").orderBy("ts","desc").limit(200).get();
-    allDocs = snap.docs.map(function(doc){ return Object.assign({ id: doc.id }, doc.data()); });
-    populateCategoryFilter();
-    applyFilters();
-  } catch(err) {
-    list.innerHTML = "<p class='empty-state' style='color:#dc2626'>Erreur : " + err.message + "</p>";
-  }
-}
-function populateCategoryFilter() {
-  var sel  = document.getElementById("f-categorie");
-  var cats = [];
-  allDocs.forEach(function(d){ if (d.categorie && cats.indexOf(d.categorie) === -1) cats.push(d.categorie); });
-  cats.sort();
-  sel.innerHTML = '<option value="">Toutes catégories</option>' +
-    cats.map(function(c){ return '<option value="' + esc(c) + '">' + c + '</option>'; }).join("");
-}
-function applyFilters() {
-  var search    = document.getElementById("f-search").value.trim().toLowerCase();
-  var categorie = document.getElementById("f-categorie").value;
-  var dateFrom  = document.getElementById("f-date-from").value;
-  var dateTo    = document.getElementById("f-date-to").value;
-  var declarant = document.getElementById("f-declarant").value.trim().toLowerCase();
-
-  var filtered = allDocs.filter(function(d) {
-    if (categorie && d.categorie !== categorie) return false;
-    if (d.date) {
-      var docDate = d.date.slice(0, 10);
-      if (dateFrom && docDate < dateFrom) return false;
-      if (dateTo   && docDate > dateTo)   return false;
-    }
-    if (declarant && !(d.declarant_email || "").toLowerCase().includes(declarant)) return false;
-    if (search) {
-      var hay = [].concat(d.chemin||[]).concat([d.support,d.kit,d.engin,d.commentaire,d.preco,d.stockage_hs,d.declarant_email]).filter(Boolean).join(" ").toLowerCase();
-      if (!hay.includes(search)) return false;
-    }
-    return true;
-  });
-
-  var fc = document.getElementById("filter-count");
-  fc.textContent = filtered.length + " / " + allDocs.length + " entrée" + (allDocs.length > 1 ? "s" : "");
-  renderHistoryItems(filtered, search);
-}
-function clearFilters() {
-  ["f-search","f-date-from","f-date-to","f-declarant"].forEach(function(id){ document.getElementById(id).value = ""; });
-  document.getElementById("f-categorie").value = "";
-  applyFilters();
-}
-function highlight(text, term) {
-  if (!term || !text) return text || "";
-  var escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return String(text).replace(new RegExp(escaped, "gi"), function(m){ return "<mark>" + m + "</mark>"; });
-}
-function renderHistoryItems(docs, searchTerm) {
-  var list = document.getElementById("history-list");
-  if (!docs.length) {
-    list.innerHTML = "<p class='empty-state' style='padding:30px 0'>Aucun résultat pour ces filtres.</p>";
-    return;
-  }
-  list.innerHTML = docs.map(function(d) {
-    var dt        = d.date ? new Date(d.date).toLocaleString("fr-FR") : "—";
-    var dec       = d.declarant_email ? '<span style="opacity:.7">· ' + highlight(d.declarant_email, searchTerm) + '</span>' : "";
-    var cheminHL  = (d.chemin||[]).map(function(c){ return highlight(c, searchTerm); }).join(" › ");
-    var infosHL   = [d.support,d.kit,d.engin].filter(Boolean).map(function(v){ return highlight(v,searchTerm); }).join(" · ");
-    var commentHL = d.commentaire ? highlight(d.commentaire, searchTerm) : "";
-    var photos    = d.photos || [];
-
-    // Sérialise les photos en data-attribute pour éviter les problèmes de guillemets dans onclick
-    var photoEl = "";
-    if (photos.length) {
-      var thumbs = photos.map(function(src, i) {
-        return '<img class="hist-photo-thumb" src="' + src + '" alt="Photo ' + (i+1) + '" ' +
-               'data-index="' + i + '" data-docid="' + d.id + '" ' +
-               'onclick="openHistoryPhoto(this)" />';
-      }).join("");
-      photoEl = '<div class="hist-photos">' + thumbs + '</div>';
-      // On stocke les photos dans un objet global indexé par doc id
-      window._histPhotos = window._histPhotos || {};
-      window._histPhotos[d.id] = photos;
-    }
-
-    return '<div class="history-item" id="item-' + d.id + '">' +
-      '<div class="history-item-top">' +
-        '<span class="hist-badge">' + highlight(d.categorie||"—", searchTerm) + '</span>' +
-        '<span class="hist-date">' + dt + ' ' + dec + '</span>' +
-        '<button class="btn-delete" onclick="deleteAnomaly(\'' + d.id + '\')">🗑 Supprimer</button>' +
-      '</div>' +
-      '<div class="hist-path">' + cheminHL + '</div>' +
-      (infosHL   ? '<div class="hist-fields">' + infosHL + '</div>' : '') +
-      (commentHL ? '<div class="hist-fields" style="margin-top:4px;font-style:italic">"' + commentHL + '"</div>' : '') +
-      photoEl +
-    '</div>';
-  }).join("");
-}
-
-/* Ouvre la lightbox depuis l'historique via data-attribute */
-function openHistoryPhoto(el) {
-  var docId  = el.dataset.docid;
-  var index  = parseInt(el.dataset.index, 10);
-  var photos = (window._histPhotos || {})[docId] || [];
-  openLightboxHistory(photos, index);
-}
-
-/* ── Suppression ── */
-function deleteAnomaly(docId) {
-  var overlay = document.getElementById("confirm-overlay");
-  var okBtn   = document.getElementById("confirm-ok-btn");
-  overlay.classList.add("show");
-  var fresh = okBtn.cloneNode(true);
-  okBtn.replaceWith(fresh);
-  fresh.onclick = async function() {
-    closeConfirm();
-    var item = document.getElementById("item-" + docId);
-    if (item) item.classList.add("removing");
-    try {
-      await db.collection("anomalies").doc(docId).delete();
-      allDocs = allDocs.filter(function(d){ return d.id !== docId; });
-      setTimeout(function() { if (item) item.remove(); applyFilters(); }, 280);
-      showToast("✅ Anomalie supprimée");
-    } catch(err) {
-      if (item) item.classList.remove("removing");
-      showToast("❌ Erreur : " + err.message);
-    }
-  };
-}
-function closeConfirm() { document.getElementById("confirm-overlay").classList.remove("show"); }
-function showToast(msg) {
-  var t = document.getElementById("toast");
-  t.textContent = msg; t.classList.add("show");
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 3000);
-}
-
-/* ═══════════════════════════════════════════
-   EXPORT CSV / XLSX
-   ═══════════════════════════════════════════ */
-async function getExportRows() {
-  var docs = allDocs;
-  if (!docs.length) {
-    var snap = await db.collection("anomalies").orderBy("ts","desc").get();
-    docs = snap.docs.map(function(doc){ return Object.assign({ id: doc.id }, doc.data()); });
-  }
-  return docs.map(function(d) {
-    return {
-      "Date":           d.date ? new Date(d.date).toLocaleString("fr-FR") : "",
-      "Catégorie":      d.categorie      || "",
-      "Chemin complet": (d.chemin||[]).join(" › "),
-      "Support":        d.support        || "",
-      "Kit":            d.kit            || "",
-      "Engin":          d.engin          || "",
-      "Commentaire":    d.commentaire    || "",
-      "Préconisation":  d.preco          || "",
-      "Stockage HS":    d.stockage_hs    || "",
-      "Déclarant":      d.declarant_email|| "",
-      "Nb photos":      (d.photos||[]).length
-    };
-  });
-}
-async function exportCSV() {
-  showToast("⏳ Préparation du CSV…");
-  try {
-    var rows = await getExportRows();
-    if (!rows.length) { showToast("⚠ Aucune anomalie à exporter"); return; }
-    var headers = Object.keys(rows[0]);
-    var escCSV  = function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; };
-    var lines   = [headers.map(escCSV).join(";")].concat(rows.map(function(r){ return headers.map(function(h){ return escCSV(r[h]); }).join(";"); }));
-    var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-    triggerDownload(blob, "anomalies_" + dateStamp() + ".csv");
-    showToast("✅ CSV téléchargé (" + rows.length + " lignes)");
-  } catch(err) { showToast("❌ Erreur : " + err.message); }
-}
-async function exportXLSX() {
-  showToast("⏳ Préparation Excel…");
-  try {
-    var rows = await getExportRows();
-    if (!rows.length) { showToast("⚠ Aucune anomalie à exporter"); return; }
-    var ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{wch:18},{wch:18},{wch:50},{wch:16},{wch:14},{wch:14},{wch:35},{wch:35},{wch:20},{wch:28},{wch:10}];
-    var wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Anomalies");
-    XLSX.writeFile(wb, "anomalies_" + dateStamp() + ".xlsx");
-    showToast("✅ Excel téléchargé (" + rows.length + " lignes)");
-  } catch(err) { showToast("❌ Erreur : " + err.message); }
-}
-function triggerDownload(blob, filename) {
-  var url = URL.createObjectURL(blob);
-  var a   = document.createElement("a");
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-}
-function dateStamp() { return new Date().toISOString().slice(0,10); }
-
-/* ── Restart ── */
-function restart() {
-  currentStepId  = TREE.start;
-  stepHistory    = [];
-  collected      = {};
-  breadcrumb     = [];
-  pendingPhotos  = [];
-  historyVisible = false;
-  document.getElementById("form-view").style.display = "block";
-  document.getElementById("history-view").classList.remove("show");
-  render();
-}
-
-</script>
-
-<script>
-  /* ── Version badge : affichage immédiat depuis localStorage ── */
-  (function() {
-    const v = localStorage.getItem('app-version');
-    if (v) {
-      document.querySelectorAll('.version-badge').forEach(el => el.textContent = 'v' + v);
-    }
-  })();
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-
-      /* Écoute la version envoyée par le SW */
-      navigator.serviceWorker.addEventListener('message', event => {
-        if (event.data && event.data.type === 'VERSION') {
-          const v = event.data.version;
-          /* Sauvegarde pour les prochains chargements */
-          localStorage.setItem('app-version', v);
-          /* Mise à jour du badge dans la page */
-          document.querySelectorAll('.version-badge').forEach(el => el.textContent = 'v' + v);
-          console.log('[PWA] Version active :', v);
-        }
-      });
-
-      navigator.serviceWorker.register('./sw.js')
-        .then(reg => {
-          console.log('[PWA] SW enregistré :', reg.scope);
-          /* Demande la version dès que le SW est prêt */
-          navigator.serviceWorker.ready.then(registration => {
-            if (registration.active) {
-              registration.active.postMessage({ type: 'GET_VERSION' });
-            }
-          });
-          /* Si le SW vient de se mettre à jour, demande aussi la nouvelle version */
-          reg.addEventListener('updatefound', () => {
-            const newWorker = reg.installing;
-            newWorker.addEventListener('statechange', () => {
-              if (newWorker.state === 'activated') {
-                newWorker.postMessage({ type: 'GET_VERSION' });
-              }
-            });
-          });
-        })
-        .catch(err => console.error('[PWA] Erreur SW :', err));
-    });
-  }
-</script>
+  <!-- Script applicatif externe -->
+  <script src="./app.js"></script>
 
 </body>
 </html>
