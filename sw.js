@@ -2,10 +2,11 @@
 const VERSION    = '1.6';
 const CACHE_NAME = 'anomalies-kit-v' + VERSION;
 // ──────────────────────────────────────────────────────────
-
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
+  '/style.css',
+  '/app.js',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
@@ -45,9 +46,9 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   if (
-    request.url.includes('firebaseio.com') ||
-    request.url.includes('googleapis.com') ||
-    request.url.includes('firestore.googleapis.com') ||
+    request.url.includes('firebaseio.com')              ||
+    request.url.includes('googleapis.com')              ||
+    request.url.includes('firestore.googleapis.com')    ||
     request.url.includes('identitytoolkit.googleapis.com') ||
     request.url.includes('securetoken.googleapis.com')
   ) { return; }
