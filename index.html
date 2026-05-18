@@ -1163,8 +1163,8 @@ const LABEL_MAP = {
 };
 
 function renderSummary() {
-  document.getElementById("progress-bar").style.width    = "100%";
-  document.getElementById("progress-label").textContent  = "Récapitulatif";
+  document.getElementById("progress-bar").style.width   = "100%";
+  document.getElementById("progress-label").textContent = "Récapitulatif";
 
   const path = [];
   for (let i = 1; ; i++) {
@@ -1176,59 +1176,98 @@ function renderSummary() {
     .map(([k, v]) => ({ key: LABEL_MAP[k] || k, val: v || "—" }));
 
   document.getElementById("step-container").innerHTML = `
+
+    <!-- ── En-tête ── -->
     <div class="card" style="margin-bottom:14px">
       <div class="step-tag">Récapitulatif</div>
       <div class="step-question" style="font-size:17px">Vérifiez avant d'enregistrer</div>
     </div>
+
+    <!-- ── Chemin d'anomalie ── -->
     <div class="summary-table">
       <div class="summary-header">📋 Chemin d'anomalie</div>
-      ${path.map((p, i) =>
-        `<div class="summary-row">
-           <span class="s-key">Niveau ${i + 1}</span>
-           <span class="s-val">${p}</span>
-         </div>`
-      ).join("")}
+      ${path.map((p, i) => `
+        <div class="summary-row">
+          <span class="s-key">Niveau ${i + 1}</span>
+          <span class="s-val">${p}</span>
+        </div>
+      `).join("")}
     </div>
+
+    <!-- ── Données saisies ── -->
     ${extras.length ? `
     <div class="summary-table">
       <div class="summary-header">📝 Données saisies</div>
-      ${extras.map(e =>
-        `<div class="summary-row">
-           <span class="s-key">${e.key}</span>
-           <span class="s-val">${e.val}</span>
-         </div>`
-      ).join("")}
+      ${extras.map(e => `
+        <div class="summary-row">
+          <span class="s-key">${e.key}</span>
+          <span class="s-val">${e.val}</span>
+        </div>
+      `).join("")}
     </div>` : ""}
 
-    <!-- ── Section photos ── -->
+    <!-- ── Photos ── -->
     <div class="summary-table" style="margin-bottom:14px">
       <div class="summary-header">📷 Photos (optionnel · max ${MAX_PHOTOS})</div>
       <div style="padding:14px 16px">
+
+        <!-- Avertissement taille -->
         <div class="photo-size-warn" id="photo-warn">
-          ⚠ Une ou plusieurs photos dépassent 200 Ko après compression. Elles seront tout de même enregistrées.
+          ⚠ Une ou plusieurs photos dépassent 200 Ko après compression.
+          Elles seront tout de même enregistrées.
         </div>
+
+        <!-- Grille de vignettes -->
         <div class="photo-grid" id="photo-preview-grid"></div>
-        <div class="photo-zone" id="photo-add-zone" onclick="triggerPhotoInput()"
-             style="display:${pendingPhotos.length >= MAX_PHOTOS ? 'none' : 'block'}">
-          <div class="photo-zone-icon">📷</div>
-          <div class="photo-zone-label">Appuyer pour prendre / importer une photo</div>
-          <div class="photo-zone-sub">JPEG · PNG · max ${MAX_PHOTOS} photos</div>
+
+        <!-- Boutons Caméra / Galerie -->
+        <div id="photo-add-zone"
+             style="display:${pendingPhotos.length >= MAX_PHOTOS ? 'none' : 'flex'};
+                    gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <button class="btn btn-next"
+                  style="flex:1; min-width:140px; font-size:14px; padding:12px 10px;"
+                  onclick="triggerPhotoCamera()">
+            📷 Prendre une photo
+          </button>
+          <button class="btn btn-back"
+                  style="flex:1; min-width:140px; font-size:14px; padding:12px 10px;
+                         background:var(--border); color:#111827; border:none;">
+            <span onclick="triggerPhotoGallery()" style="display:block;width:100%">
+              🖼 Depuis la galerie
+            </span>
+          </button>
         </div>
+
+        <!-- Compteur -->
+        <div id="photo-counter"
+             style="font-size:12px; color:var(--muted); margin-top:8px; text-align:right;">
+          ${pendingPhotos.length} / ${MAX_PHOTOS} photo${pendingPhotos.length > 1 ? "s" : ""}
+        </div>
+
       </div>
     </div>
 
+    <!-- ── Boutons bas ── -->
     <div style="display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap;">
-      <button class="btn btn-back" style="flex:0 0 auto" onclick="restart()">↺ Recommencer</button>
+      <button class="btn btn-back" style="flex:0 0 auto;" onclick="restart()">
+        ↺ Recommencer
+      </button>
       <button class="btn-submit-main" id="save-btn" onclick="saveAnomaly()"
-              style="flex:1; min-width:180px">✅ Enregistrer l'anomalie</button>
+              style="flex:1; min-width:180px;">
+        ✅ Enregistrer l'anomalie
+      </button>
     </div>
+
+    <!-- ── État succès ── -->
     <div class="success-state" id="success-state">
       <div class="success-icon">✅</div>
       <h2>Anomalie enregistrée !</h2>
       <p>La déclaration a été sauvegardée avec succès.</p>
       <button class="btn-new" onclick="restart()">+ Nouvelle déclaration</button>
-    </div>`;
+    </div>
+  `;
 
+  // Rendu initial des vignettes (au cas où pendingPhotos n'est pas vide)
   renderPhotoPreview();
 }
 
@@ -1546,7 +1585,8 @@ function restart() {
 </div>
 
 <!-- Input fichier caché (photo) -->
-<input type="file" id="photo-input" accept="image/*" multiple style="display:none"
+<input type="file" id="photo-input" accept="image/*" multiple
+       style="position:fixed; opacity:0; width:1px; height:1px; top:-200px; left:-200px; pointer-events:none;"
        onchange="handlePhotoInput(event)" />
 
 <!-- Lightbox -->
@@ -1571,8 +1611,9 @@ const WARN_SIZE_B  = 200_000; // seuil d'avertissement par photo (200 Ko)
 
 /* ── Ouvre l'input fichier ── */
 function triggerPhotoInput() {
-  document.getElementById("photo-input").value = ""; // reset pour re-sélectionner le même fichier
-  document.getElementById("photo-input").click();
+  const input = document.getElementById("photo-input");
+  input.value = "";           // reset pour pouvoir re-sélectionner le même fichier
+  input.click();              // doit être appelé DIRECTEMENT depuis un événement utilisateur
 }
 
 /* ── Réception des fichiers sélectionnés ── */
@@ -1634,6 +1675,7 @@ function renderPhotoPreview() {
   const grid    = document.getElementById("photo-preview-grid");
   const addZone = document.getElementById("photo-add-zone");
   const warn    = document.getElementById("photo-warn");
+  const counter = document.getElementById("photo-counter");
   if (!grid) return;
 
   // Avertissement taille
@@ -1643,14 +1685,23 @@ function renderPhotoPreview() {
   // Vignettes
   grid.innerHTML = pendingPhotos.map((p, i) => `
     <div class="photo-thumb-wrap">
-      <img src="${p.base64}" alt="Photo ${i+1}"
+      <img src="${p.base64}" alt="Photo ${i + 1}"
            onclick="openLightboxLocal(${i})" />
-      <button class="photo-thumb-del" onclick="removePhoto(${i})" title="Supprimer">✕</button>
+      <button class="photo-thumb-del"
+              onclick="removePhoto(${i})" title="Supprimer">✕</button>
     </div>
   `).join("");
 
   // Zone d'ajout : masquée si max atteint
-  if (addZone) addZone.style.display = pendingPhotos.length >= MAX_PHOTOS ? "none" : "block";
+  if (addZone) {
+    addZone.style.display = pendingPhotos.length >= MAX_PHOTOS ? "none" : "flex";
+  }
+
+  // Compteur mis à jour
+  if (counter) {
+    const n = pendingPhotos.length;
+    counter.textContent = `${n} / ${MAX_PHOTOS} photo${n > 1 ? "s" : ""}`;
+  }
 }
 
 /* ── Suppression d'une photo en attente ── */
@@ -1761,6 +1812,27 @@ renderHistoryItems = function(docs, searchTerm) {
     </div>`;
   }).join("");
 };
+
+
+// Ouvre directement la caméra arrière
+function triggerPhotoCamera() {
+  const input = document.getElementById("photo-input");
+  input.removeAttribute("capture");
+  input.setAttribute("capture", "environment"); // caméra arrière
+  input.value = "";
+  input.click();
+}
+
+// Ouvre la galerie (sans forcer la caméra)
+function triggerPhotoGallery() {
+  const input = document.getElementById("photo-input");
+  input.removeAttribute("capture");             // retire capture pour la galerie
+  input.value = "";
+  input.click();
+}
+
+
+  
 </script>
   
 </body>
